@@ -119,6 +119,11 @@ export interface Question {
   // 2026-07-11 副田さん要望: 問題ごとの scoreMap 個別上書き (optional)
   //   未指定なら属するカテゴリーの scoreMap を使用 (右端ボタンから上書き可)。
   scoreMap?: number[] | null
+  // 2026-07-24 熊木先生要望: 設問コメント欄。
+  //   commentEnabled=true でコメント欄を表示。commentRequiredMax に値があれば
+  //   「選択した配点がその値以下のとき必須」(例: 概略評定 2 以下で必須)。
+  commentEnabled?: boolean
+  commentRequiredMax?: number | null
   universityCode?: string // 大学コード
 }
 
@@ -142,6 +147,15 @@ export interface Sheet {
   scoreMap?: number[]
   universityCode?: string // 大学コード
 }
+
+// 2026-07-24 熊木先生要望: コメント関連の共通定数・キー。
+//   コメントは点数と同じ evaluations(jsonb)に文字列で保存する。合計計算は
+//   数値の値のみを集計するため衝突しない。キーは compositeKey と被らない接頭辞。
+export const MAX_COMMENT_LENGTH = 100 // 約 2 行
+export const OVERALL_COMMENT_KEY = "overall_comment" // 総評(評価全体で 1 つ)
+export const commentKeyFor = (compositeKey: string): string => `comment:${compositeKey}`
+export const isCommentKey = (key: string): boolean =>
+  key === OVERALL_COMMENT_KEY || key.startsWith("comment:")
 
 // scoreMap のデフォルト値と解決ヘルパ
 export const DEFAULT_SCORE_MAP: number[] = [1, 2, 3, 4, 5]

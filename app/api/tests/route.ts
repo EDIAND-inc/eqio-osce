@@ -64,6 +64,9 @@ export async function GET(request: NextRequest) {
               alertOptions: question.alert_options as number[] | undefined,
               // 2026-07-10 副田さん要望 Phase 2: 問題個別の配点上書き (nullable)
               scoreMap: question.score_map as number[] | undefined,
+              // 2026-07-24 熊木先生要望: 設問コメント設定
+              commentEnabled: question.comment_enabled as boolean | undefined,
+              commentRequiredMax: (question.comment_required_max as number | null) ?? null,
             })),
         })),
     })),
@@ -89,6 +92,9 @@ interface UpsertQuestion {
   alertOptions?: number[]
   // 2026-07-10 Phase 2: 問題個別の配点上書き
   scoreMap?: number[] | null
+  // 2026-07-24 熊木先生要望: 設問コメント設定
+  commentEnabled?: boolean
+  commentRequiredMax?: number | null
 }
 interface UpsertCategory {
   id: string
@@ -260,6 +266,10 @@ export async function POST(request: NextRequest) {
               is_alert_target: question.isAlertTarget,
               alert_options: question.alertOptions || [],
               score_map: questionScoreMap,
+              // 2026-07-24 熊木先生要望: 設問コメント設定
+              comment_enabled: question.commentEnabled ?? false,
+              comment_required_max:
+                typeof question.commentRequiredMax === "number" ? question.commentRequiredMax : null,
             }) as never,
             { onConflict: "id" },
           )

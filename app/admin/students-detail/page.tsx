@@ -27,6 +27,7 @@ import {
   loadTests,
   loadTeachers,
   loadPatients,
+  OVERALL_COMMENT_KEY,
   type Student,
   type EvaluationResult,
   type AttendanceRecord,
@@ -318,6 +319,32 @@ export default function StudentsDetailPage() {
       contentScores[`${col.testId}::${col.compositeKey}`] = val
     }
 
+    // 2026-07-24 熊木先生要望: コメント(設問別 + 総評)を教員内部向けに集約
+    const commentEntries: { slot: string; label: string; text: string }[] = []
+    for (const e of studentEvaluations) {
+      const ans = (e as any).answers as Record<string, unknown> | undefined
+      if (!ans) continue
+      const email = ((e as any).evaluatorEmail || (e as any).evaluatorId || "").toLowerCase()
+      const isTeacher = (e as any).evaluatorType === "teacher"
+      const emails = isTeacher ? roomTeacherEmails : roomPatientEmails
+      const idx = emails.indexOf(email)
+      const slot = isTeacher
+        ? `教員${["①", "②", "③", "④"][idx] ?? (idx >= 0 ? idx + 1 : "")}`
+        : roomPatientEmails.length > 1
+          ? `患者役${idx >= 0 ? idx + 1 : ""}`
+          : "患者役"
+      for (const [k, v] of Object.entries(ans)) {
+        if (typeof v !== "string" || v.trim() === "") continue
+        if (k === OVERALL_COMMENT_KEY) {
+          commentEntries.push({ slot, label: "総評", text: v })
+        } else if (k.startsWith("comment:")) {
+          const ck = k.slice("comment:".length)
+          const col = dedupedContentColumns.find((c) => c.compositeKey === ck)
+          commentEntries.push({ slot, label: col ? col.questionText || `問${ck}` : `問${ck}`, text: v })
+        }
+      }
+    }
+
     // 2026-07-03 副田さん要望: 割合 = 合計得点 / セッション満点 × 100
     const percentage = sessionMaxTotal > 0 ? Math.round((combinedScore / sessionMaxTotal) * 100) : null
     const isBelow50 = percentage !== null && percentage < 50 && completedEvaluations.length > 0
@@ -374,6 +401,8 @@ export default function StudentsDetailPage() {
       percentage,
       isBelow50,
       combinedScore,
+      // 2026-07-24: コメント(教員内部)
+      commentEntries,
     }
   }
 
@@ -536,6 +565,7 @@ export default function StudentsDetailPage() {
       ...patientHeaders,
       "割合",
       "出欠",
+      "コメント",
     ]
     const rows = sortedRows.map(({ student, data }) => {
       return [
@@ -552,6 +582,7 @@ export default function StudentsDetailPage() {
         ...data.patientSlotScores.map((s) => (typeof s === "number" ? String(s) : "")),
         data.percentage != null ? `${data.percentage}%` : "",
         data.attendanceStatus === "present" ? "出席" : data.attendanceStatus === "absent" ? "欠席" : "未確認",
+        data.commentEntries.map((c) => `【${c.slot}】${c.label}：${c.text}`).join(" / "),
       ]
     })
 
@@ -722,6 +753,8 @@ export default function StudentsDetailPage() {
                     ))}
                     <th onClick={() => toggleSort("percentage")} className={`h-10 px-2 text-right align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>割合{sortCaret("percentage")}</th>
                     <th onClick={() => toggleSort("attendance")} className={`h-10 px-2 text-center align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>出欠{sortCaret("attendance")}</th>
+                    {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
+                    <th className="h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white">コメント</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -794,6 +827,21 @@ export default function StudentsDetailPage() {
                         </td>
                         <td className="p-2 align-middle whitespace-nowrap text-center">
                           <StatusPill kind={attKind}>{attLabel}</StatusPill>
+                        </td>
+                        {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
+                        <td className="p-2 align-top text-xs min-w-[220px] max-w-[340px]">
+                          {data.commentEntries.length === 0 ? (
+                            <span className="text-muted-foreground/40">-</span>
+                          ) : (
+                            <div className="space-y-1 whitespace-normal">
+                              {data.commentEntries.map((c, i) => (
+                                <div key={i} className="leading-snug">
+                                  <span className="font-semibold text-primary/80">{c.slot}・{c.label}：</span>
+                                  {c.text}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )

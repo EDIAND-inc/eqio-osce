@@ -28,6 +28,9 @@ interface RenderableQuestion extends QuestionWithGroupingMeta {
   option3?: string
   option4?: string
   option5?: string
+  // 2026-07-24 熊木先生要望: 設問コメント設定
+  commentEnabled?: boolean
+  commentRequiredMax?: number | null
 }
 
 const DEFAULT_SCORE_MAP = [1, 2, 3, 4, 5]
@@ -50,6 +53,11 @@ interface ExamQuestionsRendererProps {
   /** ボタンクリック時のハンドラ (compositeKey を渡す)。
    *  value=null で選択解除 (2026-07-03 副田さん要望) */
   onAnswer: (compositeKey: string, optionValue: number | null) => void
+  /** 2026-07-24: 設問コメント (compositeKey → 本文)。commentEnabled の設問で入力欄を表示 */
+  comments?: Record<string, string>
+  onComment?: (compositeKey: string, value: string) => void
+  /** コメントの最大文字数 */
+  commentMaxLength?: number
 }
 
 export function ExamQuestionsRenderer({
@@ -58,6 +66,9 @@ export function ExamQuestionsRenderer({
   inputDisabled,
   attendancePresent,
   onAnswer,
+  comments,
+  onComment,
+  commentMaxLength = 100,
 }: ExamQuestionsRendererProps) {
   return (
     <>
@@ -82,15 +93,24 @@ export function ExamQuestionsRenderer({
                   const isAlertTarget = question.isAlertTarget
 
                   const answered = selectedOption != null
+                  // 2026-07-24: コメント必須(選択した配点が閾値以下)なのに未入力か
+                  const commentText = comments?.[compositeKey] || ""
+                  const commentRequired =
+                    question.commentEnabled &&
+                    typeof question.commentRequiredMax === "number" &&
+                    typeof selectedOption === "number" &&
+                    selectedOption <= question.commentRequiredMax
+                  const commentMissing = commentRequired && commentText.trim() === ""
                   return (
                     <div
                       key={compositeKey}
                       // 2026-07-12 デザイン Phase 2-1: 未回答/回答済み/アラートを行の質感で区別。
                       //   採点済みは淡い水色、アラート対象は左に赤帯。
-                      className={`flex items-start gap-3 sm:gap-4 rounded-lg px-3 py-2.5 transition-colors ${
-                        isAlertTarget ? "border-l-[3px] border-critical/60 pl-2.5" : ""
+                      className={`rounded-lg transition-colors ${
+                        isAlertTarget ? "border-l-[3px] border-critical/60" : ""
                       } ${answered ? "bg-primary/[0.04]" : "hover:bg-muted/40"}`}
                     >
+                    <div className={`flex items-start gap-3 sm:gap-4 px-3 py-2.5 ${isAlertTarget ? "pl-2.5" : ""}`}>
                       <div className="flex-shrink-0 w-7 pt-2 text-sm font-semibold text-muted-foreground tnum text-right">
                         {question.number}
                       </div>
@@ -138,6 +158,37 @@ export function ExamQuestionsRenderer({
                           )
                         })}
                       </div>
+                    </div>
+                    {/* 2026-07-24 熊木先生要望: 設問コメント欄 (commentEnabled のとき) */}
+                    {question.commentEnabled && (
+                      <div className="px-3 pb-2.5 pl-10 sm:pl-11">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[11px] font-semibold text-muted-foreground">コメント</span>
+                          {commentRequired && (
+                            <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${
+                              commentMissing ? "bg-critical/15 text-critical" : "bg-muted text-muted-foreground"
+                            }`}>
+                              {commentMissing ? "必須・未入力" : "必須"}
+                            </span>
+                          )}
+                        </div>
+                        <textarea
+                          value={commentText}
+                          onChange={(e) => onComment?.(compositeKey, e.target.value.slice(0, commentMaxLength))}
+                          disabled={inputDisabled || !attendancePresent}
+                          rows={2}
+                          maxLength={commentMaxLength}
+                          placeholder="コメントを入力（任意）"
+                          className={`w-full resize-none rounded-lg border bg-card px-3 py-2 text-sm leading-relaxed
+                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+                            disabled:cursor-not-allowed disabled:opacity-50
+                            ${commentMissing ? "border-critical/70" : "border-input"}`}
+                        />
+                        <div className="mt-0.5 text-right text-[10px] text-muted-foreground tnum">
+                          {commentText.length} / {commentMaxLength}
+                        </div>
+                      </div>
+                    )}
                     </div>
                   )
                 })}

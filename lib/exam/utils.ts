@@ -3,16 +3,30 @@
  * teacher-exam-tabs.tsx と patient-exam-tabs.tsx で 100% 同一だった
  * 純粋関数を抽出。挙動変更ゼロ、純粋な dedup。
  */
+import { OVERALL_COMMENT_KEY } from "@/lib/types"
 
 /**
  * answers (compositeKey → optionValue) の合計点を返す。
- * patient/teacher 共通の素朴 sum。値の合計のみなのでキー型に依存しない。
+ * 2026-07-24: コメント機能により answers には文字列コメント
+ * (`comment:...` / `overall_comment`) も同居するため、**数値の値のみ**を合算する。
  */
 export function calculateScore(
-  answers: Record<string | number, number> | undefined,
+  answers: Record<string | number, unknown> | undefined,
 ): number {
   if (!answers) return 0
-  return Object.values(answers).reduce((sum, val) => sum + val, 0)
+  return Object.values(answers).reduce<number>(
+    (sum, val) => (typeof val === "number" ? sum + val : sum),
+    0,
+  )
+}
+
+/**
+ * 2026-07-24: answers から「実際に採点された設問数」を数える。
+ * 数値の値のみを対象にし、コメント文字列キーを除外する。
+ */
+export function countAnswered(answers: Record<string | number, unknown> | undefined): number {
+  if (!answers) return 0
+  return Object.values(answers).filter((v) => typeof v === "number").length
 }
 
 /**
@@ -49,6 +63,9 @@ export interface FlattenedQuestion {
   // 2026-07-10 副田さん要望 Phase 1: 有効な配点マップ (シート → 問題個別で解決済み)
   //   flattenTestQuestions が sheet.scoreMap / question.scoreMap から解決して入れる。
   scoreMap?: number[]
+  // 2026-07-24 熊木先生要望: 設問コメント設定 (pass-through)
+  commentEnabled?: boolean
+  commentRequiredMax?: number | null
   // displayNumber は addDisplayNumber=true のときのみ
   displayNumber?: number
   // 元の question の他のフィールドは pass-through で保持
@@ -138,10 +155,13 @@ export function computeHasAlert(
  * から導出する想定。
  */
 export interface EvaluationMaps {
-  // 2026-07-03: compositeKey (`${categoryNumber}-${questionNumber}`) ベース
+  // 2026-07-03: compositeKey (`${categoryNumber}-${questionNumber}`) ベース。数値の採点のみ。
   answers: Record<string, Record<string, number>>
   completion: Record<string, boolean>
   alerts: Record<string, boolean>
+  // 2026-07-24: 学生 → コメントキー(compositeKey / OVERALL_COMMENT_KEY) → 本文。
+  //   evaluations(jsonb)内の `comment:<key>` / `overall_comment` を復元したもの。
+  comments: Record<string, Record<string, string>>
 }
 
 interface EvaluationResultLike {
@@ -163,7 +183,7 @@ export function buildEvaluationMaps(
     evaluatorEmail?: string
   },
 ): EvaluationMaps {
-  const out: EvaluationMaps = { answers: {}, completion: {}, alerts: {} }
+  const out: EvaluationMaps = { answers: {}, completion: {}, alerts: {}, comments: {} }
   if (!results || !Array.isArray(results)) return out
 
   // 2026-07-11: メール比較は大文字小文字を無視 (代理採点で lowercased email が入るため)
@@ -172,13 +192,72 @@ export function buildEvaluationMaps(
     if (r.evaluatorType !== opts.evaluatorType) continue
     if (wantEmail && (r.evaluatorId || "").toLowerCase() !== wantEmail) continue
     if (!r.studentId) continue
-    // 過去データが Record<number,...> でも Record<string,...> でも、JS 上では
-    // string キー扱いで問題なく取得できる。型は string にキャストして保存。
-    out.answers[r.studentId] = (r.answers || {}) as Record<string, number>
+    // 2026-07-24: evaluations には採点(数値)とコメント(文字列)が同居する。
+    //   数値キー → answers、コメントキー → comments に振り分けて復元する。
+    const raw = (r.answers || {}) as Record<string, unknown>
+    const scores: Record<string, number> = {}
+    const comments: Record<string, string> = {}
+    for (const [k, v] of Object.entries(raw)) {
+      if (typeof v === "number") {
+        scores[k] = v
+      } else if (typeof v === "string" && v !== "") {
+        if (k === OVERALL_COMMENT_KEY) comments[OVERALL_COMMENT_KEY] = v
+        else if (k.startsWith("comment:")) comments[k.slice("comment:".length)] = v
+      }
+    }
+    out.answers[r.studentId] = scores
     out.completion[r.studentId] = r.isCompleted || false
     out.alerts[r.studentId] = r.hasAlert || false
+    out.comments[r.studentId] = comments
   }
   return out
+}
+
+/**
+ * 2026-07-24: 採点とコメントを 1 つの evaluations オブジェクトに統合する。
+ *   scores(compositeKey→数値)+ comments(compositeKey / OVERALL_COMMENT_KEY→文字列)。
+ *   空コメントは保存しない。
+ */
+export function mergeAnswersAndComments(
+  scores: Record<string, number>,
+  comments: Record<string, string> | undefined,
+): Record<string, number | string> {
+  const merged: Record<string, number | string> = { ...scores }
+  if (comments) {
+    for (const [k, v] of Object.entries(comments)) {
+      const t = (v || "").trim()
+      if (!t) continue
+      const storageKey = k === OVERALL_COMMENT_KEY ? OVERALL_COMMENT_KEY : `comment:${k}`
+      merged[storageKey] = t
+    }
+  }
+  return merged
+}
+
+/**
+ * 2026-07-24: コメント必須なのに未入力の設問 compositeKey 一覧を返す。
+ *   question.commentEnabled かつ commentRequiredMax があり、選択した配点が
+ *   その値以下なのにコメントが空 → 必須未入力。
+ */
+export function missingRequiredComments(
+  questions: ReadonlyArray<{ compositeKey?: string; commentEnabled?: boolean; commentRequiredMax?: number | null }>,
+  scores: Record<string, number> | undefined,
+  comments: Record<string, string> | undefined,
+): string[] {
+  const missing: string[] = []
+  if (!questions) return missing
+  for (const q of questions) {
+    const key = q.compositeKey
+    if (!key || !q.commentEnabled) continue
+    if (typeof q.commentRequiredMax !== "number") continue
+    const score = scores?.[key]
+    if (typeof score !== "number") continue // 未回答は「全問回答」チェック側で弾く
+    if (score <= q.commentRequiredMax) {
+      const text = (comments?.[key] || "").trim()
+      if (!text) missing.push(key)
+    }
+  }
+  return missing
 }
 
 export function flattenTestQuestions(

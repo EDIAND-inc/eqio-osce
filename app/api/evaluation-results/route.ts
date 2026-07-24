@@ -36,7 +36,10 @@ export async function GET(request: NextRequest) {
     totalScore: (row.total_score as number) || 0,
     // ADR-006 R-2-F6-0: max_score を返す(レガシー行は NULL のまま fallback)
     maxScore: (row.max_score as number | null) ?? null,
-    answeredCount: Object.keys((row.evaluations as Record<string, unknown>) || {}).length,
+    // 2026-07-24: コメント(文字列)が同居するため、数値の値のみを回答数として数える
+    answeredCount: Object.values((row.evaluations as Record<string, unknown>) || {}).filter(
+      (v) => typeof v === "number",
+    ).length,
     isCompleted: (row.is_completed as boolean) || false,
     hasAlert: (row.has_alert as boolean) || false,
     createdAt: row.created_at as string,
