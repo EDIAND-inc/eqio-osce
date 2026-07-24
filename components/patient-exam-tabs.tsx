@@ -32,6 +32,7 @@ import {
 } from "@/lib/exam/utils"
 import { useElapsedTimer, useGroupedQuestions } from "@/lib/exam/hooks"
 import { ExamQuestionsRenderer } from "@/components/exam-questions-renderer"
+import { ExamQuestionsWizard, type WizardQuestion } from "@/components/exam-questions-wizard"
 
 interface PatientExamTabsProps {
   patientEmail: string
@@ -65,6 +66,21 @@ export default function PatientExamTabs({
   const [studentAnswers, setStudentAnswers] = useState<Record<string, Record<string, number>>>({})
   // 2026-07-24 熊木先生要望: コメント (学生 → compositeKey / OVERALL_COMMENT_KEY → 本文)
   const [studentComments, setStudentComments] = useState<Record<string, Record<string, string>>>({})
+  // 2026-07-24 熊木先生要望 Phase 2: SP 入力の表示形式。既定は「1問ずつ」(誤タップ防止)。
+  //   端末ごとに localStorage で記憶。一覧に切り替えることも可能。
+  const [viewMode, setViewMode] = useState<"wizard" | "list">("wizard")
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("spExamViewMode") : null
+    if (saved === "list" || saved === "wizard") setViewMode(saved)
+  }, [])
+  const changeViewMode = (m: "wizard" | "list") => {
+    setViewMode(m)
+    try {
+      localStorage.setItem("spExamViewMode", m)
+    } catch {
+      /* localStorage 不可でも無視 */
+    }
+  }
   const [attendanceStatus, setAttendanceStatus] = useState<Record<string, "present" | "absent" | "pending">>({})
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({})
   const [questions, setQuestions] = useState<QuestionWithMeta[]>([])
@@ -464,60 +480,105 @@ export default function PatientExamTabs({
 
         {attendanceStatus[activeStudent?.id || ""] === "present" && (
           <>
-            {/* 2026-05-08 ADR-001 §1.2 F4 Phase B.1: 質問描画は共通コンポーネント */}
-            <ExamQuestionsRenderer
-              groupedQuestions={groupedQuestions}
-              answers={studentAnswers[activeStudent.id] || {}}
-              inputDisabled={completionStatus[activeStudent.id] || false}
-              attendancePresent={attendanceStatus[activeStudent.id] === "present"}
-              onAnswer={handleAnswerChange}
-              comments={studentComments[activeStudent.id] || {}}
-              onComment={handleCommentChange}
-              commentMaxLength={MAX_COMMENT_LENGTH}
-            />
-
-            {/* 2026-07-24 熊木先生要望: 総評コメント(評価全体で 1 つ) */}
-            <div className="px-4 pt-2">
-              <label className="text-sm font-semibold text-foreground/80">総評コメント（任意）</label>
-              <textarea
-                value={(studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || ""}
-                onChange={(e) => handleCommentChange(OVERALL_COMMENT_KEY, e.target.value.slice(0, MAX_COMMENT_LENGTH))}
-                disabled={completionStatus[activeStudent.id] || attendanceStatus[activeStudent.id] !== "present"}
-                rows={2}
-                maxLength={MAX_COMMENT_LENGTH}
-                placeholder="全体を通してのコメントを入力（任意・教員内部の記録）"
-                className="mt-1 w-full resize-none rounded-lg border border-input bg-card px-3 py-2 text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <div className="mt-0.5 text-right text-[10px] text-muted-foreground tnum">
-                {((studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || "").length} / {MAX_COMMENT_LENGTH}
+            {/* 2026-07-24 熊木先生要望 Phase 2: 表示形式の切替 (1問ずつ / 一覧) */}
+            <div className="flex justify-end px-4">
+              <div className="inline-flex rounded-lg border border-input bg-card p-0.5 text-sm">
+                <button
+                  type="button"
+                  onClick={() => changeViewMode("wizard")}
+                  className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+                    viewMode === "wizard" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  1問ずつ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeViewMode("list")}
+                  className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+                    viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  一覧
+                </button>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4 px-4">
-              {!completionStatus[activeStudent.id] && (
-                <Button
-                  onClick={() => handleMarkComplete(activeStudent.id)}
-                  disabled={
-                    answeredCount !== questions.length ||
-                    attendanceStatus[activeStudent.id] !== "present" ||
-                    missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length > 0
-                  }
-                  className="flex-1"
-                >
-                  入力完了 ({answeredCount}/{questions.length})
-                </Button>
-              )}
-              {completionStatus[activeStudent.id] && (
-                <>
-                  <Button onClick={() => handleEnableEdit(activeStudent.id)} variant="outline" className="flex-1">
-                    編集
-                  </Button>
-                  <div className="flex-1 flex items-center justify-center bg-muted text-muted-foreground rounded-md px-4 py-2">
-                    入力完了済み
+            {viewMode === "wizard" ? (
+              // 2026-07-24 熊木先生要望 Phase 2: SP 向け「1問ずつ」ガイド入力
+              <ExamQuestionsWizard
+                key={activeStudent.id}
+                questions={questions as unknown as WizardQuestion[]}
+                answers={studentAnswers[activeStudent.id] || {}}
+                comments={studentComments[activeStudent.id] || {}}
+                onAnswer={handleAnswerChange}
+                onComment={handleCommentChange}
+                overallKey={OVERALL_COMMENT_KEY}
+                commentMaxLength={MAX_COMMENT_LENGTH}
+                inputDisabled={completionStatus[activeStudent.id] || false}
+                attendancePresent={attendanceStatus[activeStudent.id] === "present"}
+                isCompleted={completionStatus[activeStudent.id] || false}
+                onComplete={() => handleMarkComplete(activeStudent.id)}
+                onEdit={() => handleEnableEdit(activeStudent.id)}
+              />
+            ) : (
+              <>
+                {/* 一覧表示(従来) */}
+                <ExamQuestionsRenderer
+                  groupedQuestions={groupedQuestions}
+                  answers={studentAnswers[activeStudent.id] || {}}
+                  inputDisabled={completionStatus[activeStudent.id] || false}
+                  attendancePresent={attendanceStatus[activeStudent.id] === "present"}
+                  onAnswer={handleAnswerChange}
+                  comments={studentComments[activeStudent.id] || {}}
+                  onComment={handleCommentChange}
+                  commentMaxLength={MAX_COMMENT_LENGTH}
+                />
+
+                {/* 2026-07-24 熊木先生要望: 総評コメント(評価全体で 1 つ) */}
+                <div className="px-4 pt-2">
+                  <label className="text-sm font-semibold text-foreground/80">総評コメント（任意）</label>
+                  <textarea
+                    value={(studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || ""}
+                    onChange={(e) => handleCommentChange(OVERALL_COMMENT_KEY, e.target.value.slice(0, MAX_COMMENT_LENGTH))}
+                    disabled={completionStatus[activeStudent.id] || attendanceStatus[activeStudent.id] !== "present"}
+                    rows={2}
+                    maxLength={MAX_COMMENT_LENGTH}
+                    placeholder="全体を通してのコメントを入力（任意・教員内部の記録）"
+                    className="mt-1 w-full resize-none rounded-lg border border-input bg-card px-3 py-2 text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <div className="mt-0.5 text-right text-[10px] text-muted-foreground tnum">
+                    {((studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || "").length} / {MAX_COMMENT_LENGTH}
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+
+                <div className="flex gap-3 pt-4 px-4">
+                  {!completionStatus[activeStudent.id] && (
+                    <Button
+                      onClick={() => handleMarkComplete(activeStudent.id)}
+                      disabled={
+                        answeredCount !== questions.length ||
+                        attendanceStatus[activeStudent.id] !== "present" ||
+                        missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length > 0
+                      }
+                      className="flex-1"
+                    >
+                      入力完了 ({answeredCount}/{questions.length})
+                    </Button>
+                  )}
+                  {completionStatus[activeStudent.id] && (
+                    <>
+                      <Button onClick={() => handleEnableEdit(activeStudent.id)} variant="outline" className="flex-1">
+                        編集
+                      </Button>
+                      <div className="flex-1 flex items-center justify-center bg-muted text-muted-foreground rounded-md px-4 py-2">
+                        入力完了済み
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
