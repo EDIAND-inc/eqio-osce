@@ -102,7 +102,7 @@ export function ExamQuestionsWizard({
   if (isFinalStep) {
     const overallText = comments[overallKey] || ""
     return (
-      <div className="mx-auto w-full max-w-2xl space-y-3 px-2">
+      <div className="mx-auto w-full max-w-5xl space-y-3 px-2">
         <ProgressBar current={total} total={total} label="最終確認" />
 
         <div className="rounded-2xl border bg-card p-4 shadow-sm">
@@ -169,72 +169,42 @@ export function ExamQuestionsWizard({
   const canNext = answered && !commentMissing
 
   const labels = scoreMap.map((_, idx) => optionLabelAt(q, idx))
-  // 長文の選択肢(はい/いいえ・数字以外)は縦並びのコンパクトなリストにして
-  // 1 画面に収まりやすくする。短い選択肢は横並びの大きなボタン。
-  const longLabels = labels.some((l) => (l?.length ?? 0) > 6)
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-3 px-2">
+    <div className="mx-auto w-full max-w-5xl space-y-3 px-2">
       <ProgressBar current={clampedStep + 1} total={total} label={q.categoryTitle} />
 
-      <div className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border bg-card p-5 shadow-sm sm:p-7">
         {/* 設問文 */}
-        <p className="text-lg font-bold leading-snug text-foreground sm:text-xl">
+        <p className="text-xl font-bold leading-snug text-foreground sm:text-2xl">
           {q.text}
         </p>
 
-        {/* 評価ボタン: 長文は縦・短文は横 */}
-        {longLabels ? (
-          <div className="mt-3 flex flex-col gap-2">
-            {scoreMap.map((option, idx) => {
-              const isOn = selected === option
-              const label = labels[idx]
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => onAnswer(q.compositeKey, isOn ? null : option)}
-                  className={`w-full rounded-xl border-2 px-4 py-2.5 text-left text-base font-semibold leading-snug transition-all
-                    disabled:cursor-not-allowed disabled:opacity-40
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-                    ${
-                      isOn
-                        ? "border-primary bg-primary text-primary-foreground shadow"
-                        : "border-input bg-background text-foreground hover:border-primary/60 hover:bg-primary/5 active:scale-[0.99]"
-                    }`}
-                >
-                  {label ?? option}
-                </button>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="mt-4 flex flex-wrap gap-2.5">
-            {scoreMap.map((option, idx) => {
-              const isOn = selected === option
-              const label = labels[idx]
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => onAnswer(q.compositeKey, isOn ? null : option)}
-                  className={`flex min-h-14 min-w-20 flex-1 items-center justify-center rounded-2xl border-2 px-4 text-xl font-bold transition-all
-                    disabled:cursor-not-allowed disabled:opacity-40
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                    ${
-                      isOn
-                        ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-[1.02]"
-                        : "border-input bg-background text-foreground hover:border-primary/60 hover:bg-primary/5 active:scale-95"
-                    }`}
-                >
-                  {label ?? option}
-                </button>
-              )
-            })}
-          </div>
-        )}
+        {/* 評価ボタン: 横並び。カードが広いので長文でも余裕を持って収まる */}
+        <div className="mt-5 flex flex-wrap gap-3">
+          {scoreMap.map((option, idx) => {
+            const isOn = selected === option
+            const label = labels[idx]
+            return (
+              <button
+                key={option}
+                type="button"
+                disabled={disabled}
+                onClick={() => onAnswer(q.compositeKey, isOn ? null : option)}
+                className={`flex min-h-16 min-w-28 flex-1 items-center justify-center rounded-2xl border-2 px-4 py-3 text-center text-lg font-bold leading-snug transition-all
+                  disabled:cursor-not-allowed disabled:opacity-40
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                  ${
+                    isOn
+                      ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-[1.02]"
+                      : "border-input bg-background text-foreground hover:border-primary/60 hover:bg-primary/5 active:scale-95"
+                  }`}
+              >
+                {label ?? option}
+              </button>
+            )
+          })}
+        </div>
 
         {/* コメント欄（設定時） */}
         {q.commentEnabled && (
