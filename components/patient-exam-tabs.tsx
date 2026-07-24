@@ -15,15 +15,20 @@ import {
   loadAttendanceRecords,
   loadEvaluationResults,
   saveEvaluationResults,
+  MAX_COMMENT_LENGTH,
+  OVERALL_COMMENT_KEY,
 } from "@/lib/data-storage"
 import { useSession } from "@/lib/auth/use-session"
 import { ExamSessionBanner } from "@/components/exam-session-banner"
 import {
   calculateScore,
+  countAnswered,
   getTestSessionId,
   flattenTestQuestions,
   buildEvaluationMaps,
   computeHasAlert,
+  mergeAnswersAndComments,
+  missingRequiredComments,
 } from "@/lib/exam/utils"
 import { useElapsedTimer, useGroupedQuestions } from "@/lib/exam/hooks"
 import { ExamQuestionsRenderer } from "@/components/exam-questions-renderer"
@@ -58,6 +63,8 @@ export default function PatientExamTabs({
   const [activeStudentIndex, setActiveStudentIndex] = useState(0)
   // 2026-07-03: compositeKey (`${categoryNumber}-${questionNumber}`) ベースに変更
   const [studentAnswers, setStudentAnswers] = useState<Record<string, Record<string, number>>>({})
+  // 2026-07-24 熊木先生要望: コメント (学生 → compositeKey / OVERALL_COMMENT_KEY → 本文)
+  const [studentComments, setStudentComments] = useState<Record<string, Record<string, string>>>({})
   const [attendanceStatus, setAttendanceStatus] = useState<Record<string, "present" | "absent" | "pending">>({})
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({})
   const [questions, setQuestions] = useState<QuestionWithMeta[]>([])
@@ -153,6 +160,7 @@ export default function PatientExamTabs({
 
         setAttendanceStatus(initialAttendance)
         setStudentAnswers(maps.answers)
+        setStudentComments(maps.comments)
         setCompletionStatus(maps.completion)
         setAlertTriggers(maps.alerts)
       } catch (error) {
@@ -204,20 +212,41 @@ export default function PatientExamTabs({
       [student.id]: updatedAnswers,
     }))
 
-    const totalScore = Object.values(updatedAnswers).reduce((sum, val) => sum + val, 0)
-    // 2026-05-13: alertTriggers state は handleAnswerChange で更新していなかったため
-    // 常に false で保存されるバグ。全 answers から再計算する。
-    const hasAlert = computeHasAlert(updatedAnswers, questions)
+    await persistAnswer(student.id, updatedAnswers, studentComments[student.id], previousAnswers)
+  }
+
+  // 2026-07-24: コメント変更 (compositeKey または OVERALL_COMMENT_KEY)。
+  //   採点とコメントを 1 つの evaluations に統合して保存する。
+  const handleCommentChange = async (commentKey: string, value: string) => {
+    const student = assignedStudents[activeStudentIndex]
+    if (!student) return
+    const previousComments = studentComments
+    const nextForStudent = { ...(studentComments[student.id] || {}), [commentKey]: value }
+    setStudentComments((prev) => ({ ...prev, [student.id]: nextForStudent }))
+    await persistAnswer(student.id, studentAnswers[student.id] || {}, nextForStudent, undefined, previousComments)
+  }
+
+  // 採点 + コメントをまとめて保存する共通処理
+  const persistAnswer = async (
+    studentId: string,
+    scores: Record<string, number>,
+    comments: Record<string, string> | undefined,
+    rollbackAnswers?: Record<string, Record<string, number>>,
+    rollbackComments?: Record<string, Record<string, string>>,
+  ) => {
+    const merged = mergeAnswersAndComments(scores, comments)
+    const totalScore = calculateScore(scores)
+    const hasAlert = computeHasAlert(scores, questions)
 
     const evaluationResult: EvaluationResult = {
-      studentId: student.id,
+      studentId,
       evaluatorId: patientEmail,
       evaluatorType: "patient",
       roomNumber: patientRoomNumber,
-      answers: updatedAnswers,
+      answers: merged as Record<string, number>,
       totalScore,
-      answeredCount: Object.keys(updatedAnswers).length,
-      isCompleted: completionStatus[student.id] || false,
+      answeredCount: countAnswered(scores),
+      isCompleted: completionStatus[studentId] || false,
       hasAlert,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -228,8 +257,8 @@ export default function PatientExamTabs({
     try {
       await saveEvaluationResults([evaluationResult])
     } catch (error) {
-      // 保存失敗時は UI を巻き戻し、原因をユーザーに通知する(silent fail 防止)
-      setStudentAnswers(previousAnswers)
+      if (rollbackAnswers) setStudentAnswers(rollbackAnswers)
+      if (rollbackComments) setStudentComments(rollbackComments)
       const msg = error instanceof Error ? error.message : String(error)
       console.error("[patient-exam-tabs] saveEvaluationResults (answer) failed:", msg)
       alert(`回答の保存に失敗しました。再度お試しください。\n${msg}`)
@@ -241,10 +270,18 @@ export default function PatientExamTabs({
     if (!student) return
 
     const studentAnswersData = studentAnswers[studentId] || {}
-    const answeredCount = Object.keys(studentAnswersData).length
+    const studentCommentsData = studentComments[studentId] || {}
+    const answeredCount = countAnswered(studentAnswersData)
 
     if (answeredCount !== questions.length) {
       alert(`全ての設問に回答してください。(${answeredCount}/${questions.length}問回答済み)`)
+      return
+    }
+
+    // 2026-07-24: コメント必須(配点が閾値以下)なのに未入力の設問があれば完了させない
+    const missing = missingRequiredComments(questions, studentAnswersData, studentCommentsData)
+    if (missing.length > 0) {
+      alert(`低評価の設問にはコメントの入力が必要です。(未入力: ${missing.length}件)`)
       return
     }
 
@@ -263,7 +300,7 @@ export default function PatientExamTabs({
       evaluatorId: patientEmail,
       evaluatorType: "patient",
       roomNumber: patientRoomNumber,
-      answers: studentAnswersData,
+      answers: mergeAnswersAndComments(studentAnswersData, studentCommentsData) as Record<string, number>,
       totalScore,
       answeredCount,
       isCompleted: true,
@@ -295,7 +332,7 @@ export default function PatientExamTabs({
     return `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
   }
 
-  const answeredCount = Object.keys(studentAnswers[assignedStudents[activeStudentIndex]?.id || ""] || {}).length
+  const answeredCount = countAnswered(studentAnswers[assignedStudents[activeStudentIndex]?.id || ""])
   const totalScore = calculateScoreFor(assignedStudents[activeStudentIndex]?.id || "")
   const activeStudent = assignedStudents[activeStudentIndex]
 
@@ -434,13 +471,37 @@ export default function PatientExamTabs({
               inputDisabled={completionStatus[activeStudent.id] || false}
               attendancePresent={attendanceStatus[activeStudent.id] === "present"}
               onAnswer={handleAnswerChange}
+              comments={studentComments[activeStudent.id] || {}}
+              onComment={handleCommentChange}
+              commentMaxLength={MAX_COMMENT_LENGTH}
             />
+
+            {/* 2026-07-24 熊木先生要望: 総評コメント(評価全体で 1 つ) */}
+            <div className="px-4 pt-2">
+              <label className="text-sm font-semibold text-foreground/80">総評コメント（任意）</label>
+              <textarea
+                value={(studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || ""}
+                onChange={(e) => handleCommentChange(OVERALL_COMMENT_KEY, e.target.value.slice(0, MAX_COMMENT_LENGTH))}
+                disabled={completionStatus[activeStudent.id] || attendanceStatus[activeStudent.id] !== "present"}
+                rows={2}
+                maxLength={MAX_COMMENT_LENGTH}
+                placeholder="全体を通してのコメントを入力（任意・教員内部の記録）"
+                className="mt-1 w-full resize-none rounded-lg border border-input bg-card px-3 py-2 text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <div className="mt-0.5 text-right text-[10px] text-muted-foreground tnum">
+                {((studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || "").length} / {MAX_COMMENT_LENGTH}
+              </div>
+            </div>
 
             <div className="flex gap-3 pt-4 px-4">
               {!completionStatus[activeStudent.id] && (
                 <Button
                   onClick={() => handleMarkComplete(activeStudent.id)}
-                  disabled={answeredCount !== questions.length || attendanceStatus[activeStudent.id] !== "present"}
+                  disabled={
+                    answeredCount !== questions.length ||
+                    attendanceStatus[activeStudent.id] !== "present" ||
+                    missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length > 0
+                  }
                   className="flex-1"
                 >
                   入力完了 ({answeredCount}/{questions.length})

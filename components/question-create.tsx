@@ -504,7 +504,7 @@ export function QuestionCreate() {
     categoryId: string,
     questionId: string,
     field: keyof Question,
-    value: string | boolean,
+    value: string | boolean | number | null,
   ) => {
     setTests(
       tests.map((t) =>
@@ -1214,6 +1214,43 @@ export function QuestionCreate() {
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
                                         </div>
+                                      </div>
+                                      {/* 2026-07-24 熊木先生要望: 設問コメント欄の設定 */}
+                                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                        <div className="flex items-center space-x-1">
+                                          <Checkbox
+                                            id={`comment-en-${question.id}`}
+                                            checked={(question as { commentEnabled?: boolean }).commentEnabled || false}
+                                            onCheckedChange={(v) =>
+                                              updateQuestion(test.id, sheet.id, category.id, question.id, "commentEnabled", Boolean(v))
+                                            }
+                                          />
+                                          <label htmlFor={`comment-en-${question.id}`} className="text-xs cursor-pointer text-gray-600">
+                                            コメント欄を表示
+                                          </label>
+                                        </div>
+                                        {(question as { commentEnabled?: boolean }).commentEnabled && (
+                                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                                            <span>評価が</span>
+                                            <Input
+                                              type="number"
+                                              value={(question as { commentRequiredMax?: number | null }).commentRequiredMax ?? ""}
+                                              onChange={(e) =>
+                                                updateQuestion(
+                                                  test.id,
+                                                  sheet.id,
+                                                  category.id,
+                                                  question.id,
+                                                  "commentRequiredMax",
+                                                  e.target.value === "" ? null : Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                                                )
+                                              }
+                                              className="w-14 h-7"
+                                              placeholder="—"
+                                            />
+                                            <span>点以下でコメント必須(空欄=任意)</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
