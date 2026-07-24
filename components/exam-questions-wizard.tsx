@@ -180,8 +180,9 @@ export function ExamQuestionsWizard({
           {q.text}
         </p>
 
-        {/* 評価ボタン: 横並び。カードが広いので長文でも余裕を持って収まる */}
-        <div className="mt-5 flex flex-wrap gap-3">
+        {/* 評価ボタン: 横並び。カードが広いので長文でも余裕を持って収まる。
+            2026-07-25 副田さん要望: 設問文との間に1行分の余白を空ける */}
+        <div className="mt-8 flex flex-wrap gap-3">
           {scoreMap.map((option, idx) => {
             const isOn = selected === option
             const label = labels[idx]
