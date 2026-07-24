@@ -102,20 +102,20 @@ export function ExamQuestionsWizard({
   if (isFinalStep) {
     const overallText = comments[overallKey] || ""
     return (
-      <div className="mx-auto w-full max-w-2xl space-y-5 px-2">
+      <div className="mx-auto w-full max-w-5xl space-y-3 px-2">
         <ProgressBar current={total} total={total} label="最終確認" />
 
-        <div className="rounded-2xl border bg-card p-5 shadow-sm">
-          <h3 className="text-lg font-bold text-foreground">総評コメント（任意）</h3>
-          <p className="mb-2 text-sm text-muted-foreground">全体を通してのコメント（教員内部の記録）</p>
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <h3 className="text-base font-bold text-foreground">総評コメント（任意）</h3>
+          <p className="mb-2 text-xs text-muted-foreground">全体を通してのコメント（教員内部の記録）</p>
           <textarea
             value={overallText}
             onChange={(e) => onComment(overallKey, e.target.value.slice(0, commentMaxLength))}
             disabled={disabled}
-            rows={3}
+            rows={2}
             maxLength={commentMaxLength}
             placeholder="コメントを入力（任意）"
-            className="w-full resize-none rounded-xl border border-input bg-background px-4 py-3 text-base leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="w-full resize-none rounded-xl border border-input bg-background px-4 py-2.5 text-base leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
           <div className="mt-1 text-right text-xs text-muted-foreground tnum">
             {overallText.length} / {commentMaxLength}
@@ -132,20 +132,20 @@ export function ExamQuestionsWizard({
         )}
 
         <div className="flex gap-3">
-          <Button variant="outline" size="lg" className="h-14 flex-1 text-base" onClick={() => setStep(total - 1)}>
+          <Button variant="outline" size="lg" className="h-12 flex-1 text-base" onClick={() => setStep(total - 1)}>
             ← 戻る
           </Button>
           {!isCompleted ? (
             <Button
               size="lg"
-              className="h-14 flex-[2] text-base font-bold"
+              className="h-12 flex-[2] text-base font-bold"
               disabled={!canComplete || disabled}
               onClick={onComplete}
             >
               入力完了
             </Button>
           ) : (
-            <Button variant="outline" size="lg" className="h-14 flex-[2] text-base" onClick={onEdit}>
+            <Button variant="outline" size="lg" className="h-12 flex-[2] text-base" onClick={onEdit}>
               編集する
             </Button>
           )}
@@ -168,28 +168,30 @@ export function ExamQuestionsWizard({
   const answered = typeof selected === "number"
   const canNext = answered && !commentMissing
 
+  const labels = scoreMap.map((_, idx) => optionLabelAt(q, idx))
+
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-5 px-2">
+    <div className="mx-auto w-full max-w-5xl space-y-3 px-2">
       <ProgressBar current={clampedStep + 1} total={total} label={q.categoryTitle} />
 
       <div className="rounded-2xl border bg-card p-5 shadow-sm sm:p-7">
-        {/* 設問文（大きく） */}
-        <p className="text-xl font-bold leading-relaxed text-foreground sm:text-2xl">
+        {/* 設問文 */}
+        <p className="text-xl font-bold leading-snug text-foreground sm:text-2xl">
           {q.text}
         </p>
 
-        {/* 大きな評価ボタン */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+        {/* 評価ボタン: 横並び。カードが広いので長文でも余裕を持って収まる */}
+        <div className="mt-5 flex flex-wrap gap-3">
           {scoreMap.map((option, idx) => {
             const isOn = selected === option
-            const label = optionLabelAt(q, idx)
+            const label = labels[idx]
             return (
               <button
                 key={option}
                 type="button"
                 disabled={disabled}
                 onClick={() => onAnswer(q.compositeKey, isOn ? null : option)}
-                className={`flex min-h-16 flex-1 items-center justify-center rounded-2xl border-2 px-4 text-xl font-bold transition-all
+                className={`flex min-h-16 min-w-28 flex-1 items-center justify-center rounded-2xl border-2 px-4 py-3 text-center text-lg font-bold leading-snug transition-all
                   disabled:cursor-not-allowed disabled:opacity-40
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                   ${
@@ -206,7 +208,7 @@ export function ExamQuestionsWizard({
 
         {/* コメント欄（設定時） */}
         {q.commentEnabled && (
-          <div className="mt-5">
+          <div className="mt-3">
             <div className="mb-1 flex items-center gap-2">
               <span className="text-sm font-semibold text-muted-foreground">コメント</span>
               {commentRequired && (
@@ -237,12 +239,12 @@ export function ExamQuestionsWizard({
         )}
       </div>
 
-      {/* ナビゲーション（大きく） */}
-      <div className="flex gap-3">
+      {/* ナビゲーション */}
+      <div className="flex items-center gap-3">
         <Button
           variant="outline"
           size="lg"
-          className="h-14 flex-1 text-base"
+          className="h-12 flex-1 text-base"
           disabled={clampedStep === 0}
           onClick={() => setStep((s) => Math.max(0, s - 1))}
         >
@@ -250,7 +252,7 @@ export function ExamQuestionsWizard({
         </Button>
         <Button
           size="lg"
-          className="h-14 flex-[2] text-base font-bold"
+          className="h-12 flex-[2] text-base font-bold"
           disabled={!canNext}
           onClick={() => setStep((s) => s + 1)}
         >
@@ -258,10 +260,10 @@ export function ExamQuestionsWizard({
         </Button>
       </div>
       {!answered && (
-        <p className="text-center text-sm text-muted-foreground">評価を選ぶと次へ進めます</p>
+        <p className="text-center text-xs text-muted-foreground">評価を選ぶと次へ進めます</p>
       )}
       {commentMissing && (
-        <p className="text-center text-sm text-critical">この評価ではコメントの入力が必要です</p>
+        <p className="text-center text-xs text-critical">この評価ではコメントの入力が必要です</p>
       )}
     </div>
   )
@@ -271,7 +273,7 @@ function ProgressBar({ current, total, label }: { current: number; total: number
   const pct = total > 0 ? Math.round((current / total) * 100) : 0
   return (
     <div>
-      <div className="mb-1.5 flex items-baseline justify-between">
+      <div className="mb-1 flex items-baseline justify-between">
         <span className="text-sm font-medium text-muted-foreground">{label || " "}</span>
         <span className="text-sm font-bold text-primary tnum">
           {current} <span className="text-muted-foreground">/ {total}</span>

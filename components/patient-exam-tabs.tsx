@@ -409,9 +409,9 @@ export default function PatientExamTabs({
         </div>
       </header>
 
-      <div className="border-b pb-2 pt-3 px-2">
-        <div className="text-sm font-semibold mb-2">医学生選択 - 評価する医学生を選択してください</div>
-        <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="border-b pb-1.5 pt-2 px-2">
+        <div className="text-xs font-semibold mb-1.5 text-muted-foreground">医学生選択 - 評価する医学生を選択してください</div>
+        <div className="flex gap-2 overflow-x-auto pb-1.5">
           {assignedStudents.map((student, index) => {
             const attendance = attendanceStatus[student.id] || null
             const isStudentCompleted = completionStatus[student.id] || false
@@ -465,13 +465,13 @@ export default function PatientExamTabs({
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold mb-1">{activeStudent?.name}の評価</h2>
-          <p className="text-sm text-muted-foreground mb-1">
-            {activeStudent?.studentId} - {answeredCount}/{questions.length}回答済み
-          </p>
-          <p className="text-sm font-medium">テスト: {selectedTest?.title || "評価シート"}</p>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <h2 className="text-base font-semibold">{activeStudent?.name}の評価</h2>
+          <span className="text-xs text-muted-foreground">
+            {activeStudent?.studentId}・{answeredCount}/{questions.length}回答済み
+          </span>
+          <span className="text-xs text-muted-foreground">テスト: {selectedTest?.title || "評価シート"}</span>
         </div>
 
         {attendanceStatus[activeStudent?.id || ""] !== "present" && (
