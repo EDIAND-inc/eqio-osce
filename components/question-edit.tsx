@@ -334,6 +334,45 @@ export function QuestionEdit({ testId }: QuestionEditProps) {
     )
   }
 
+  // 2026-07-25 熊木先生報告: 選択肢テキスト(可変長)の index 更新。
+  //   options 配列を正とし、先頭5件は互換のため option1..5 にも同期する。
+  const updateQuestionOption = (
+    sheetId: string,
+    categoryId: string,
+    questionId: string,
+    index: number,
+    value: string,
+  ) => {
+    setSheets(
+      sheets.map((s) =>
+        s.id === sheetId
+          ? {
+              ...s,
+              categories: s.categories.map((c) =>
+                c.id === categoryId
+                  ? {
+                      ...c,
+                      questions: c.questions.map((q) => {
+                        if (q.id !== questionId) return q
+                        const qq = q as { options?: string[] | null }
+                        const cur = Array.isArray(qq.options)
+                          ? [...(qq.options as string[])]
+                          : [q.option1 || "", q.option2 || "", q.option3 || "", q.option4 || "", q.option5 || ""]
+                        while (cur.length <= index) cur.push("")
+                        cur[index] = value
+                        const next: Record<string, unknown> = { ...q, options: cur }
+                        if (index < 5) next[`option${index + 1}`] = value
+                        return next as unknown as typeof q
+                      }),
+                    }
+                  : c,
+              ),
+            }
+          : s,
+      ),
+    )
+  }
+
   const toggleAlertOption = (sheetId: string, categoryId: string, questionId: string, optionNumber: number) => {
     setSheets(
       sheets.map((s) =>
@@ -666,26 +705,20 @@ export function QuestionEdit({ testId }: QuestionEditProps) {
                                       : Array.isArray(cMap) && cMap.length > 0
                                       ? cMap
                                       : [1, 2, 3, 4, 5]
-                                    const optKeys = ["option1", "option2", "option3", "option4", "option5"] as const
+                                    // 2026-07-25 熊木先生報告: 6 段階以上でも全ての選択肢テキストを
+                                    //   入力できるよう、options 配列(無ければ option1..5)から値を取る。
+                                    const optionsArr = Array.isArray((question as { options?: string[] | null }).options)
+                                      ? ((question as { options?: string[] }).options as string[])
+                                      : null
+                                    const optCols = [question.option1, question.option2, question.option3, question.option4, question.option5]
                                     return effMap.map((val, i) => {
-                                      const key = optKeys[i]
-                                      if (!key) {
-                                        return (
-                                          <Input
-                                            key={i}
-                                            value=""
-                                            disabled
-                                            placeholder={String(val)}
-                                            className="w-20 bg-gray-100"
-                                          />
-                                        )
-                                      }
+                                      const current = (optionsArr?.[i] ?? optCols[i] ?? "") as string
                                       return (
                                         <Input
                                           key={i}
-                                          value={(question[key] as string) || ""}
+                                          value={current || ""}
                                           onChange={(e) =>
-                                            updateQuestion(sheet.id, category.id, question.id, key, e.target.value)
+                                            updateQuestionOption(sheet.id, category.id, question.id, i, e.target.value)
                                           }
                                           placeholder={String(val)}
                                           className="w-20"

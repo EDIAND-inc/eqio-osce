@@ -13,6 +13,7 @@
  */
 
 import type { GroupedQuestions, QuestionWithGroupingMeta } from "@/lib/exam/hooks"
+import { optionLabelAt } from "@/lib/types"
 
 // 描画に必要な question フィールド
 interface RenderableQuestion extends QuestionWithGroupingMeta {
@@ -23,24 +24,19 @@ interface RenderableQuestion extends QuestionWithGroupingMeta {
   // 2026-07-10 副田さん要望 Phase 1: 有効な配点マップ (flatten 側で解決済み)
   scoreMap?: number[] | null
   // 2026-07-13 副田さん要望: 選択肢テキスト (はい/いいえ 等)。設定時はボタン表示に使う。
+  //   2026-07-25: 6 段階以上に対応するため可変長 options を優先(無ければ option1..5)。
   option1?: string
   option2?: string
   option3?: string
   option4?: string
   option5?: string
+  options?: string[] | null
   // 2026-07-24 熊木先生要望: 設問コメント設定
   commentEnabled?: boolean
   commentRequiredMax?: number | null
 }
 
 const DEFAULT_SCORE_MAP = [1, 2, 3, 4, 5]
-
-// scoreMap の位置 (0-based) に対応する選択肢テキストを返す。空なら null。
-function optionLabelAt(question: RenderableQuestion, index: number): string | null {
-  const texts = [question.option1, question.option2, question.option3, question.option4, question.option5]
-  const t = texts[index]
-  return typeof t === "string" && t.trim() !== "" ? t.trim() : null
-}
 
 interface ExamQuestionsRendererProps {
   groupedQuestions: GroupedQuestions<RenderableQuestion>[]

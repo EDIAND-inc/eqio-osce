@@ -109,11 +109,14 @@ export interface Question {
   id: string
   number: number // 問題番号（No）
   text: string // 問題文
-  option1: string // 選択肢1
+  option1: string // 選択肢1（互換: options 未設定時のフォールバック）
   option2: string // 選択肢2
   option3: string // 選択肢3
   option4: string // 選択肢4
   option5: string // 選択肢5
+  // 2026-07-25 熊木先生報告: 段階数 6 以上に対応するため選択肢テキストを可変長配列で持つ。
+  //   options[i] があればそれを、無ければ option{i+1} を使う。
+  options?: string[] | null
   isAlertTarget: boolean // アラート対象ON/OFF
   alertOptions: number[] // アラート対象の選択肢番号（配点値）
   // 2026-07-11 副田さん要望: 問題ごとの scoreMap 個別上書き (optional)
@@ -156,6 +159,25 @@ export const OVERALL_COMMENT_KEY = "overall_comment" // 総評(評価全体で 1
 export const commentKeyFor = (compositeKey: string): string => `comment:${compositeKey}`
 export const isCommentKey = (key: string): boolean =>
   key === OVERALL_COMMENT_KEY || key.startsWith("comment:")
+
+// 2026-07-25 熊木先生報告: 選択肢テキストの解決。options[index] を優先し、
+//   無ければ option{index+1}(互換)を使う。空なら null(＝数値表示)。
+export function optionLabelAt(
+  q: {
+    options?: string[] | null
+    option1?: string
+    option2?: string
+    option3?: string
+    option4?: string
+    option5?: string
+  },
+  index: number,
+): string | null {
+  const fromArray = Array.isArray(q.options) ? q.options[index] : undefined
+  const fromCols = [q.option1, q.option2, q.option3, q.option4, q.option5][index]
+  const v = typeof fromArray === "string" && fromArray.trim() !== "" ? fromArray : fromCols
+  return typeof v === "string" && v.trim() !== "" ? v.trim() : null
+}
 
 // scoreMap のデフォルト値と解決ヘルパ
 export const DEFAULT_SCORE_MAP: number[] = [1, 2, 3, 4, 5]

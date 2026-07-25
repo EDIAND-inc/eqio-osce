@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
               option3: question.option3 as string | undefined,
               option4: question.option4 as string | undefined,
               option5: question.option5 as string | undefined,
+              // 2026-07-25 熊木先生報告: 6 段階以上の選択肢テキスト(可変長)
+              options: (question.options as string[] | null) ?? undefined,
               isAlertTarget: question.is_alert_target as boolean | undefined,
               alertOptions: question.alert_options as number[] | undefined,
               // 2026-07-10 副田さん要望 Phase 2: 問題個別の配点上書き (nullable)
@@ -88,6 +90,7 @@ interface UpsertQuestion {
   option3?: string
   option4?: string
   option5?: string
+  options?: string[] | null
   isAlertTarget?: boolean
   alertOptions?: number[]
   // 2026-07-10 Phase 2: 問題個別の配点上書き
@@ -252,17 +255,25 @@ export async function POST(request: NextRequest) {
             Array.isArray(question.scoreMap) && question.scoreMap.length > 0
               ? question.scoreMap.map((n) => Math.max(0, Math.floor(Number(n) || 0)))
               : null
+          // 2026-07-25 熊木先生報告: 選択肢テキストは可変長 options(配列)を正とする。
+          //   option1..5 は互換のため options の先頭5件から同期して書く。
+          const optionsArr = Array.isArray(question.options)
+            ? question.options.map((s) => (typeof s === "string" ? s : ""))
+            : null
+          const opt = (i: number): string =>
+            (optionsArr ? optionsArr[i] : ((question as unknown as Record<string, unknown>)[`option${i + 1}`] as string)) || ""
           const { error: questionError } = await supabase.from("questions").upsert(
             ({
               id: question.id,
               category_id: category.id,
               number: question.number,
               text: question.text,
-              option1: question.option1,
-              option2: question.option2,
-              option3: question.option3,
-              option4: question.option4,
-              option5: question.option5,
+              option1: opt(0),
+              option2: opt(1),
+              option3: opt(2),
+              option4: opt(3),
+              option5: opt(4),
+              options: optionsArr,
               is_alert_target: question.isAlertTarget,
               alert_options: question.alertOptions || [],
               score_map: questionScoreMap,
