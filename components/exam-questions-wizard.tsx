@@ -13,6 +13,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { optionLabelAt } from "@/lib/types"
 
 export interface WizardQuestion {
   compositeKey: string
@@ -27,17 +28,12 @@ export interface WizardQuestion {
   option3?: string
   option4?: string
   option5?: string
+  options?: string[] | null
   commentEnabled?: boolean
   commentRequiredMax?: number | null
 }
 
 const DEFAULT_SCORE_MAP = [1, 2, 3, 4, 5]
-
-function optionLabelAt(q: WizardQuestion, index: number): string | null {
-  const texts = [q.option1, q.option2, q.option3, q.option4, q.option5]
-  const t = texts[index]
-  return typeof t === "string" && t.trim() !== "" ? t.trim() : null
-}
 
 interface Props {
   questions: WizardQuestion[]

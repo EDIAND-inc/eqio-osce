@@ -532,6 +532,52 @@ export function QuestionCreate() {
     )
   }
 
+  // 2026-07-25 熊木先生報告: 選択肢テキスト(可変長)の index 更新。
+  const updateQuestionOption = (
+    testId: string,
+    sheetId: string,
+    categoryId: string,
+    questionId: string,
+    index: number,
+    value: string,
+  ) => {
+    setTests(
+      tests.map((t) =>
+        t.id === testId
+          ? {
+              ...t,
+              sheets: t.sheets.map((s) =>
+                s.id === sheetId
+                  ? {
+                      ...s,
+                      categories: s.categories.map((c) =>
+                        c.id === categoryId
+                          ? {
+                              ...c,
+                              questions: c.questions.map((q) => {
+                                if (q.id !== questionId) return q
+                                const qq = q as { options?: string[] | null }
+                                const cur = Array.isArray(qq.options)
+                                  ? [...(qq.options as string[])]
+                                  : [q.option1 || "", q.option2 || "", q.option3 || "", q.option4 || "", q.option5 || ""]
+                                while (cur.length <= index) cur.push("")
+                                cur[index] = value
+                                const next: Record<string, unknown> = { ...q, options: cur }
+                                if (index < 5) next[`option${index + 1}`] = value
+                                return next as unknown as typeof q
+                              }),
+                            }
+                          : c,
+                      ),
+                    }
+                  : s,
+              ),
+            }
+          : t,
+      ),
+    )
+  }
+
   const toggleAlertOption = (
     testId: string,
     sheetId: string,
@@ -1115,26 +1161,19 @@ export function QuestionCreate() {
                                               : Array.isArray(cMap) && cMap.length > 0
                                               ? cMap
                                               : [1, 2, 3, 4, 5]
-                                            const optKeys = ["option1", "option2", "option3", "option4", "option5"] as const
+                                            // 2026-07-25 熊木先生報告: 6 段階以上でも全選択肢を入力可能に。
+                                            const optionsArr = Array.isArray((question as { options?: string[] | null }).options)
+                                              ? ((question as { options?: string[] }).options as string[])
+                                              : null
+                                            const optCols = [question.option1, question.option2, question.option3, question.option4, question.option5]
                                             return effMap.map((val, i) => {
-                                              const key = optKeys[i]
-                                              if (!key) {
-                                                return (
-                                                  <Input
-                                                    key={i}
-                                                    value=""
-                                                    disabled
-                                                    placeholder={String(val)}
-                                                    className="w-20 bg-gray-100"
-                                                  />
-                                                )
-                                              }
+                                              const current = (optionsArr?.[i] ?? optCols[i] ?? "") as string
                                               return (
                                                 <Input
                                                   key={i}
-                                                  value={(question[key] as string) || ""}
+                                                  value={current || ""}
                                                   onChange={(e) =>
-                                                    updateQuestion(test.id, sheet.id, category.id, question.id, key, e.target.value)
+                                                    updateQuestionOption(test.id, sheet.id, category.id, question.id, i, e.target.value)
                                                   }
                                                   placeholder={String(val)}
                                                   className="w-20"
