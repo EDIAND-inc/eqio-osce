@@ -51,6 +51,8 @@ interface Props {
   isCompleted: boolean
   onComplete: () => void
   onEdit: () => void
+  /** 2026-07-25: 完了ボタンを下部アクションバー側に委譲する場合 true(ウィザードには表示しない) */
+  hideCompletion?: boolean
 }
 
 export function ExamQuestionsWizard({
@@ -66,6 +68,7 @@ export function ExamQuestionsWizard({
   isCompleted,
   onComplete,
   onEdit,
+  hideCompletion = false,
 }: Props) {
   const total = questions.length
   // ステップ: 0..total-1 = 各設問、total = 最終(総評 + 確認)
@@ -128,10 +131,11 @@ export function ExamQuestionsWizard({
         )}
 
         <div className="flex gap-3">
-          <Button variant="outline" size="lg" className="h-12 flex-1 text-base" onClick={() => setStep(total - 1)}>
-            ← 戻る
+          <Button variant="outline" size="lg" className={`h-12 text-base ${hideCompletion ? "w-full" : "flex-1"}`} onClick={() => setStep(total - 1)}>
+            ← 前の設問へ
           </Button>
-          {!isCompleted ? (
+          {/* hideCompletion 時: 入力完了/編集 は下部アクションバーに委譲 */}
+          {!hideCompletion && (!isCompleted ? (
             <Button
               size="lg"
               className="h-12 flex-[2] text-base font-bold"
@@ -144,7 +148,7 @@ export function ExamQuestionsWizard({
             <Button variant="outline" size="lg" className="h-12 flex-[2] text-base" onClick={onEdit}>
               編集する
             </Button>
-          )}
+          ))}
         </div>
       </div>
     )
