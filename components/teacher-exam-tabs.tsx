@@ -32,6 +32,7 @@ import {
   missingRequiredComments,
 } from "@/lib/exam/utils"
 import { MAX_COMMENT_LENGTH, OVERALL_COMMENT_KEY } from "@/lib/data-storage"
+import { ExamActionBar } from "@/components/exam-action-bar"
 import { useElapsedTimer, useGroupedQuestions } from "@/lib/exam/hooks"
 import { ExamQuestionsRenderer } from "@/components/exam-questions-renderer"
 
@@ -421,6 +422,17 @@ export default function TeacherExamTabs({
   const isEditMode = editMode[activeStudent?.id || ""] || false
   const isInputDisabled = isCompleted && !isEditMode
 
+  // 2026-07-25 副田さん要望: 下部アクションバー用の完了状況(欠席は完了扱い)
+  const isStudentDone = (id: string): boolean =>
+    (completionStatus[id] || false) || attendanceStatus[id] === "absent"
+  const doneCount = assignedStudents.filter((s) => isStudentDone(s.id)).length
+  const allStudentsCompleted = assignedStudents.length > 0 && assignedStudents.every((s) => isStudentDone(s.id))
+  const currentDone = activeStudent ? isStudentDone(activeStudent.id) : false
+  const canCompleteCurrent = !!activeStudent &&
+    attendanceStatus[activeStudent.id] === "present" &&
+    answeredCount === questions.length &&
+    missingRequiredComments(questions, studentAnswersData, studentComments[activeStudent.id] || {}).length === 0
+
   // 2026-05-08 ADR-001 §1.2 F4 Phase A.1: グループ化を共通フックに
   const groupedQuestions = useGroupedQuestions(questions)
 
@@ -429,7 +441,8 @@ export default function TeacherExamTabs({
   }
 
   return (
-    <div className="space-y-4">
+    // 2026-07-25: 下部固定アクションバーぶんの余白 (pb-28) を確保
+    <div className="space-y-4 pb-28">
       {isFlexibleRoom && (
         <Card className="mx-4 mt-4 border-blue-200 bg-blue-50/30">
           <CardContent className="p-3 flex items-center gap-3 flex-wrap">
@@ -489,9 +502,7 @@ export default function TeacherExamTabs({
               </>
             )}
           </div>
-          <Button onClick={handleFinishEvaluation} size="sm" className="h-6 text-sm px-2">
-            評価完了
-          </Button>
+          {/* 2026-07-25: 「評価完了」は画面下部の固定アクションバーに移動 */}
         </div>
       </header>
 
@@ -630,34 +641,26 @@ export default function TeacherExamTabs({
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4 px-4">
-              {!isCompleted && (
-                <Button
-                  onClick={() => handleMarkComplete(activeStudent.id)}
-                  disabled={
-                    answeredCount !== questions.length ||
-                    attendanceStatus[activeStudent.id] !== "present" ||
-                    missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length > 0
-                  }
-                  className="flex-1"
-                >
-                  入力完了 ({answeredCount}/{questions.length})
-                </Button>
-              )}
-              {isCompleted && (
-                <>
-                  <Button onClick={() => handleEnableEdit(activeStudent.id)} variant="outline" className="flex-1">
-                    編集
-                  </Button>
-                  <div className="flex-1 flex items-center justify-center bg-muted text-muted-foreground rounded-md px-4 py-2">
-                    入力完了済み
-                  </div>
-                </>
-              )}
-            </div>
+            {/* 2026-07-25: 入力完了/次の学生へ/評価完了 は画面下部の固定アクションバーへ集約 */}
           </>
         )}
       </div>
+
+      {/* 2026-07-25 副田さん要望: タブレット向け 下部固定アクションバー */}
+      {activeStudent && (
+        <ExamActionBar
+          completedCount={doneCount}
+          totalStudents={assignedStudents.length}
+          allCompleted={allStudentsCompleted}
+          currentDone={currentDone}
+          canCompleteCurrent={canCompleteCurrent}
+          hasNextStudent={activeStudentIndex < assignedStudents.length - 1}
+          onCompleteCurrent={() => handleMarkComplete(activeStudent.id)}
+          onEditCurrent={() => handleEnableEdit(activeStudent.id)}
+          onNextStudent={() => setActiveStudentIndex((i) => Math.min(i + 1, assignedStudents.length - 1))}
+          onFinish={handleFinishEvaluation}
+        />
+      )}
     </div>
     </div>
   )

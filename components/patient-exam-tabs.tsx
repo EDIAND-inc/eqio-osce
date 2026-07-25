@@ -33,6 +33,7 @@ import {
 import { useElapsedTimer, useGroupedQuestions } from "@/lib/exam/hooks"
 import { ExamQuestionsRenderer } from "@/components/exam-questions-renderer"
 import { ExamQuestionsWizard, type WizardQuestion } from "@/components/exam-questions-wizard"
+import { ExamActionBar } from "@/components/exam-action-bar"
 
 interface PatientExamTabsProps {
   patientEmail: string
@@ -352,6 +353,17 @@ export default function PatientExamTabs({
   const totalScore = calculateScoreFor(assignedStudents[activeStudentIndex]?.id || "")
   const activeStudent = assignedStudents[activeStudentIndex]
 
+  // 2026-07-25 副田さん要望: 下部アクションバー用の完了状況(欠席は完了扱い)
+  const isStudentDone = (id: string): boolean =>
+    (completionStatus[id] || false) || attendanceStatus[id] === "absent"
+  const doneCount = assignedStudents.filter((s) => isStudentDone(s.id)).length
+  const allStudentsCompleted = assignedStudents.length > 0 && assignedStudents.every((s) => isStudentDone(s.id))
+  const currentDone = activeStudent ? isStudentDone(activeStudent.id) : false
+  const canCompleteCurrent = !!activeStudent &&
+    attendanceStatus[activeStudent.id] === "present" &&
+    answeredCount === questions.length &&
+    missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length === 0
+
   // 2026-05-08 ADR-001 §1.2 F4 Phase A.1: グループ化を共通フックに
   const groupedQuestions = useGroupedQuestions(questions)
 
@@ -370,7 +382,8 @@ export default function PatientExamTabs({
   }
 
   return (
-    <div className="space-y-4">
+    // 2026-07-25: 下部固定アクションバーぶんの余白 (pb-28) を確保
+    <div className="space-y-4 pb-28">
       <ExamSessionBanner
         testSessionId={typeof window !== "undefined" ? sessionStorage.getItem("testSessionId") || "" : ""}
         roomNumber={patientRoomNumber}
@@ -395,7 +408,7 @@ export default function PatientExamTabs({
               <>
                 <div className="text-sm">
                   <span className="font-medium">進捗:</span>{" "}
-                  {Object.keys(studentAnswers[activeStudent.id] || {}).length}/{questions.length}
+                  {countAnswered(studentAnswers[activeStudent.id])}/{questions.length}
                 </div>
                 <div className="text-sm">
                   <span className="font-medium">合計点:</span> {calculateScoreFor(activeStudent.id)}点
@@ -403,9 +416,7 @@ export default function PatientExamTabs({
               </>
             )}
           </div>
-          <Button onClick={() => router.push("/patient/results")} size="sm" className="h-6 text-sm px-2">
-            評価完了
-          </Button>
+          {/* 2026-07-25: 「評価完了」は画面下部の固定アクションバーに移動 */}
         </div>
       </header>
 
@@ -520,6 +531,7 @@ export default function PatientExamTabs({
                 isCompleted={completionStatus[activeStudent.id] || false}
                 onComplete={() => handleMarkComplete(activeStudent.id)}
                 onEdit={() => handleEnableEdit(activeStudent.id)}
+                hideCompletion
               />
             ) : (
               <>
@@ -552,36 +564,28 @@ export default function PatientExamTabs({
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4 px-4">
-                  {!completionStatus[activeStudent.id] && (
-                    <Button
-                      onClick={() => handleMarkComplete(activeStudent.id)}
-                      disabled={
-                        answeredCount !== questions.length ||
-                        attendanceStatus[activeStudent.id] !== "present" ||
-                        missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length > 0
-                      }
-                      className="flex-1"
-                    >
-                      入力完了 ({answeredCount}/{questions.length})
-                    </Button>
-                  )}
-                  {completionStatus[activeStudent.id] && (
-                    <>
-                      <Button onClick={() => handleEnableEdit(activeStudent.id)} variant="outline" className="flex-1">
-                        編集
-                      </Button>
-                      <div className="flex-1 flex items-center justify-center bg-muted text-muted-foreground rounded-md px-4 py-2">
-                        入力完了済み
-                      </div>
-                    </>
-                  )}
-                </div>
+                {/* 2026-07-25: 入力完了/次の学生へ/評価完了 は画面下部の固定アクションバーへ集約 */}
               </>
             )}
           </>
         )}
       </div>
+
+      {/* 2026-07-25 副田さん要望: タブレット向け 下部固定アクションバー(全モード共通) */}
+      {activeStudent && (
+        <ExamActionBar
+          completedCount={doneCount}
+          totalStudents={assignedStudents.length}
+          allCompleted={allStudentsCompleted}
+          currentDone={currentDone}
+          canCompleteCurrent={canCompleteCurrent}
+          hasNextStudent={activeStudentIndex < assignedStudents.length - 1}
+          onCompleteCurrent={() => handleMarkComplete(activeStudent.id)}
+          onEditCurrent={() => handleEnableEdit(activeStudent.id)}
+          onNextStudent={() => setActiveStudentIndex((i) => Math.min(i + 1, assignedStudents.length - 1))}
+          onFinish={() => router.push("/patient/results")}
+        />
+      )}
     </div>
     </div>
   )
