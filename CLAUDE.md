@@ -12,7 +12,7 @@
 
 | 項目 | 値 |
 |---|---|
-| GitHub | https://github.com/YoshikiSoeda/v0-digital-marksheet-ui |
+| GitHub | https://github.com/EDIAND-inc/eqio-osce |（2026-09-10 に `YoshikiSoeda/v0-digital-marksheet-ui` から組織へ移管・改名。旧URLは自動リダイレクト）
 | 本番 URL | https://v0-digital-marksheet-ui.vercel.app |
 | Vercel project | `yoshikis-projects-25d1c165/v0-digital-marksheet-ui` |
 | Supabase project | `isvqqswuzpxyuciocozt`(`ediand-osce-system`、ap-northeast-1) |
