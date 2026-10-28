@@ -73,7 +73,7 @@ pnpm install               # lockfile が更新されているので再 install
 
 ### 2.2 本番健全性
 
-- Vercel production: **緑デプロイ継続中**(https://v0-digital-marksheet-ui.vercel.app)
+- Vercel production: **緑デプロイ継続中**(https://osce.eqio.jp ／ 旧 v0-digital-marksheet-ui.vercel.app は自動転送)
 - Supabase advisor: ERROR 0 / WARN 0 / INFO 13(deny-by-default の意図通り)
 - 全データアクセスは `app/api/*` 経由(service role)。anon SELECT/UPSERT は DB 側でゼロ
 - 認証は HttpOnly Cookie + middleware ガード(統一 `/api/auth/login`)

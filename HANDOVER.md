@@ -23,8 +23,8 @@
 
 ## 1. プロジェクト概要
 
-- **Repo**: https://github.com/YoshikiSoeda/v0-digital-marksheet-ui
-- **Production**: https://v0-digital-marksheet-ui.vercel.app
+- **Repo**: https://github.com/EDIAND-inc/eqio-osce
+- **Production**: https://osce.eqio.jp （旧 `v0-digital-marksheet-ui.vercel.app` から自動転送）
 - **Tech**: Next.js 16 (App Router) + React 19 + TypeScript 5 + Supabase + Tailwind 4 + shadcn/ui + pnpm
 - **Supabase project**: `isvqqswuzpxyuciocozt`(`ediand-osce-system`、ap-northeast-1)
 - **想定利用機関**: 昭和医科大学 歯学部 (`dentshowa`)、神奈川歯科大学 (`kanagawadent`) ほか
