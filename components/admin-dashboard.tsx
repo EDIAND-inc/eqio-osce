@@ -978,7 +978,11 @@ const AdminDashboard = () => {
           {[
             { label: "総受験者数", value: totalPresentCount, Icon: Users, tone: "brand" },
             { label: "部屋数", value: filteredRooms.length, Icon: DoorOpen, tone: "brand" },
-            { label: "試験中", value: totalPresentCount - totalCompletedCount, Icon: Clock, tone: "brand" },
+            // 2026-10-28 副田さん報告: 欠席者がいると「試験中」が負値(-1等)になる不具合。
+            //   提出済み(totalCompletedCount)は欠席を「完了扱い」で +1 するが、総受験者数
+            //   (totalPresentCount)は出席者のみ。試験中=「出席したが未提出」なので欠席分を
+            //   戻し、0 未満にならないよう clamp する。
+            { label: "試験中", value: Math.max(0, totalPresentCount - totalCompletedCount + totalAbsentCount), Icon: Clock, tone: "brand" },
             { label: "提出済み", value: totalCompletedCount, Icon: CheckCircle, tone: "success" },
             { label: "要注意", value: totalAlertCount, Icon: XCircle, tone: "critical" },
             { label: "合格者", value: totalPassCount, Icon: Trophy, tone: "warning" },
