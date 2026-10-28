@@ -75,7 +75,7 @@ Supabase Auth は使用していません。各ロールが個別ログインフ
 
 main ブランチへの push で Vercel が自動デプロイします。プレビューは feature ブランチの push でも生成されます。
 
-- 本番: https://vercel.com/yoshikis-projects-25d1c165/v0-digital-marksheet-ui
+- 本番: https://osce.eqio.jp （Vercel ダッシュボード: https://vercel.com/ediand/v0-digital-marksheet-ui）
 
 ## ライセンス / 著作権
 
