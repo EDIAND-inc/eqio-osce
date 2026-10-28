@@ -141,6 +141,38 @@ export function QuestionManagement() {
     }
   }
 
+  // 2026-10-28 熊木先生要望: 作成済みセッション名(description)を変更できるように
+  const handleRenameTestSession = async (sessionId: string, currentLabel: string) => {
+    const input = window.prompt("セッション名を入力してください", currentLabel)
+    if (input === null) return
+    const newName = input.trim()
+    if (!newName) {
+      alert("セッション名を入力してください")
+      return
+    }
+    if (newName === currentLabel) return
+    if (testSessions.some((ts) => ts.id !== sessionId && ts.description === newName)) {
+      alert(`「${newName}」は既に使われています。別の名称にしてください。`)
+      return
+    }
+    try {
+      const res = await fetch(`/api/test-sessions/${sessionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: newName }),
+      })
+      if (res.ok) {
+        alert("セッション名を変更しました")
+        await fetchTestSessions()
+      } else {
+        const err = await res.json().catch(() => null)
+        alert(`変更に失敗しました: ${err?.error || res.status}`)
+      }
+    } catch (e) {
+      alert("エラーが発生しました")
+    }
+  }
+
   // 2026-07-03 副田さん要望: 試験セッション削除機能
   // - 依存 (テスト/割当/評価結果) があれば 409 で件数を返す
   // - 副田さんが確認ダイアログで OK すれば cascade=true で強制削除
@@ -640,6 +672,16 @@ export function QuestionManagement() {
                                 割当を編集
                               </Button>
                             </Link>
+                            {/* 2026-10-28 熊木先生要望: セッション名の変更ボタン */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => handleRenameTestSession(sessionId, sessionLabel)}
+                            >
+                              <Edit className="w-3 h-3 mr-1" />
+                              名称変更
+                            </Button>
                             {/* 2026-07-03 副田さん要望: 試験セッション削除ボタン */}
                             <Button
                               variant="outline"
