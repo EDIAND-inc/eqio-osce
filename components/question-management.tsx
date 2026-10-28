@@ -45,6 +45,10 @@ export function QuestionManagement() {
   const [dupNewTestDate, setDupNewTestDate] = useState("")
   const [newUniversityCode, setNewUniversityCode] = useState("")
   const [newSubjectCode, setNewSubjectCode] = useState("")
+  // 2026-10-28 熊木先生要望: セッション名のインライン編集用
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState("")
+  const [renameSaving, setRenameSaving] = useState(false)
 
   // Phase 9b-β2e: sessionStorage 認可キーを useSession() に置換
   // userType キーは dead 値だったため session.loginType で代替
@@ -141,20 +145,30 @@ export function QuestionManagement() {
     }
   }
 
-  // 2026-10-28 熊木先生要望: 作成済みセッション名(description)を変更できるように
-  const handleRenameTestSession = async (sessionId: string, currentLabel: string) => {
-    const input = window.prompt("セッション名を入力してください", currentLabel)
-    if (input === null) return
-    const newName = input.trim()
+  // 2026-10-28 熊木先生要望: 作成済みセッション名(description)をその場で編集(インライン)
+  const startRename = (sessionId: string, currentLabel: string) => {
+    setEditingSessionId(sessionId)
+    setEditingName(currentLabel)
+  }
+  const cancelRename = () => {
+    setEditingSessionId(null)
+    setEditingName("")
+  }
+  const saveRename = async (sessionId: string, currentLabel: string) => {
+    const newName = editingName.trim()
     if (!newName) {
       alert("セッション名を入力してください")
       return
     }
-    if (newName === currentLabel) return
+    if (newName === currentLabel) {
+      cancelRename()
+      return
+    }
     if (testSessions.some((ts) => ts.id !== sessionId && ts.description === newName)) {
       alert(`「${newName}」は既に使われています。別の名称にしてください。`)
       return
     }
+    setRenameSaving(true)
     try {
       const res = await fetch(`/api/test-sessions/${sessionId}`, {
         method: "PUT",
@@ -162,14 +176,16 @@ export function QuestionManagement() {
         body: JSON.stringify({ description: newName }),
       })
       if (res.ok) {
-        alert("セッション名を変更しました")
         await fetchTestSessions()
+        cancelRename()
       } else {
         const err = await res.json().catch(() => null)
         alert(`変更に失敗しました: ${err?.error || res.status}`)
       }
     } catch (e) {
       alert("エラーが発生しました")
+    } finally {
+      setRenameSaving(false)
     }
   }
 
@@ -663,8 +679,41 @@ export function QuestionManagement() {
                   return (
                     <div key={sessionId} className="rounded-lg border bg-card overflow-hidden">
                       <div className="px-4 py-3 bg-[#00417A]/5 border-b flex items-center justify-between gap-2">
-                        <h4 className="text-base font-bold text-[#00417A]">{sessionLabel}</h4>
-                        {sessionId !== "unassigned" && (
+                        {editingSessionId === sessionId ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveRename(sessionId, sessionLabel)
+                                if (e.key === "Escape") cancelRename()
+                              }}
+                              autoFocus
+                              className="h-8 text-sm font-bold text-[#00417A]"
+                              placeholder="セッション名"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs bg-[#00417A] hover:bg-[#00417A]/90"
+                              onClick={() => saveRename(sessionId, sessionLabel)}
+                              disabled={renameSaving}
+                            >
+                              {renameSaving ? "保存中..." : "保存"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={cancelRename}
+                              disabled={renameSaving}
+                            >
+                              キャンセル
+                            </Button>
+                          </div>
+                        ) : (
+                          <h4 className="text-base font-bold text-[#00417A]">{sessionLabel}</h4>
+                        )}
+                        {sessionId !== "unassigned" && editingSessionId !== sessionId && (
                           <div className="flex gap-2">
                             <Link href={`/admin/test-sessions/${sessionId}/assignments`}>
                               <Button variant="outline" size="sm" className="h-7 text-xs">
@@ -672,12 +721,12 @@ export function QuestionManagement() {
                                 割当を編集
                               </Button>
                             </Link>
-                            {/* 2026-10-28 熊木先生要望: セッション名の変更ボタン */}
+                            {/* 2026-10-28 熊木先生要望: セッション名をその場で編集(インライン) */}
                             <Button
                               variant="outline"
                               size="sm"
                               className="h-7 text-xs"
-                              onClick={() => handleRenameTestSession(sessionId, sessionLabel)}
+                              onClick={() => startRename(sessionId, sessionLabel)}
                             >
                               <Edit className="w-3 h-3 mr-1" />
                               名称変更
