@@ -22,6 +22,9 @@ export function QuestionCreate() {
   const [selectedTestSessionId, setSelectedTestSessionId] = useState("")
   const [newTestName, setNewTestName] = useState("")
   const [newTestDate, setNewTestDate] = useState("")
+  // 2026-10-28 熊木先生要望: 登録名称(題名)を自動生成のまま固定せず自由に編集できるように。
+  //   null = 未編集(実施日_テスト名で自動反映) / 文字列 = 手動で上書きした値。
+  const [editedDescription, setEditedDescription] = useState<string | null>(null)
   const [showNewTestForm, setShowNewTestForm] = useState(false)
   const [testSessions, setTestSessions] = useState<any[]>([])
   const [universities, setUniversities] = useState<Array<{ code: string; name: string }>>([])
@@ -124,10 +127,12 @@ export function QuestionCreate() {
   const generatedDescription = newTestDate && newTestName.trim()
     ? `${formatDateForDescription(newTestDate)}_${newTestName.trim()}`
     : ""
+  // 実際に登録する名称: 手動編集済みならその値、未編集なら自動生成値を採用
+  const effectiveDescription = (editedDescription !== null ? editedDescription : generatedDescription).trim()
 
   const handleCreateTestSession = async () => {
-    if (!newTestName.trim() || !newTestDate || !selectedUniversity) {
-      alert("テスト名、実施日、大学を入力してください")
+    if (!effectiveDescription || !newTestDate || !selectedUniversity) {
+      alert("登録名称、実施日、大学を入力してください")
       return
     }
     // 2026-05-20 副田さん仕様: 試験セッションは教科に属する必要がある (subject_admin スコープのため)
@@ -136,7 +141,7 @@ export function QuestionCreate() {
       return
     }
 
-    const description = `${formatDateForDescription(newTestDate)}_${newTestName.trim()}`
+    const description = effectiveDescription
 
     // 同一名称チェック
     const isDuplicate = testSessions.some((ts) => ts.description === description)
@@ -171,6 +176,7 @@ export function QuestionCreate() {
       setSelectedTestSessionId(newSession.id)
       setNewTestName("")
       setNewTestDate("")
+      setEditedDescription(null)
       setShowNewTestForm(false)
       alert("試験セッションを登録しました")
     } catch (error) {
@@ -985,18 +991,24 @@ export function QuestionCreate() {
                         />
                       </div>
                     </div>
-                    {generatedDescription && (
-                      <div className="px-2 py-1.5 bg-blue-50 rounded border border-blue-200">
-                        <p className="text-xs text-muted-foreground">登録名称:</p>
-                        <p className="text-sm font-medium text-blue-900">{generatedDescription}</p>
-                      </div>
-                    )}
+                    <div>
+                      <Label className="text-xs">登録名称（自由に編集できます）</Label>
+                      <Input
+                        className="h-8 text-sm"
+                        value={effectiveDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        placeholder="例: 2026年度 D4 OSCE 通しテスト"
+                      />
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        実施日・テスト名から自動で入ります。必要に応じて書き換えてください。
+                      </p>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         onClick={handleCreateTestSession}
                         size="sm"
                         className="h-7 bg-[#00417A] hover:bg-[#00417A]/90"
-                        disabled={!generatedDescription}
+                        disabled={!effectiveDescription}
                       >
                         登録
                       </Button>
