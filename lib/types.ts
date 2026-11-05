@@ -13,6 +13,7 @@ export interface Student {
   email?: string // メールアドレス
   department: string // 学部・学科
   grade?: string // 学年(例: "4年" "5年")。Phase 9 B-1 で追加。
+  attendanceNumber?: string // 出席番号(学年で変わる変数。学籍番号は不変)。2026-11-05 追加。
   roomNumber: string // 部屋番号
   createdAt: string
   universityCode?: string // 大学コード

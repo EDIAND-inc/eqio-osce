@@ -20,6 +20,7 @@ type StudentRow = {
   email?: string | null
   department?: string | null
   grade?: string | null
+  attendance_number?: string | null
   university_code?: string | null
   subject_code?: string | null
   created_at: string
@@ -38,6 +39,7 @@ function mapStudent(
     email: row.email ?? undefined,
     department: row.department ?? undefined,
     grade: row.grade ?? undefined,
+    attendanceNumber: row.attendance_number ?? undefined,
     // ADR-004 Phase B-2-c: roomNumber / testSessionId は assignments 経由 (override) のみ。
     // students 列の値は無視する(後続 PR で DROP COLUMN するため)。
     roomNumber: (override?.room_number ?? "") as string,
@@ -101,6 +103,7 @@ interface UpsertStudent {
   email?: string
   department?: string
   grade?: string
+  attendanceNumber?: string
   roomNumber?: string
   universityCode?: string
   subjectCode?: string
@@ -145,6 +148,7 @@ export async function POST(request: NextRequest) {
       p_subject_code: s.subjectCode || null,
       p_test_session_id: s.testSessionId || null,
       p_room_number: s.roomNumber || null,
+      p_attendance_number: s.attendanceNumber || null,
     })
     if (error) {
       console.error("[api/students] POST rpc error:", error, { studentId: s.studentId })

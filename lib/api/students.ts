@@ -61,6 +61,7 @@ export interface UpdateStudentInput {
   email?: string
   department?: string
   grade?: string
+  attendanceNumber?: string
   universityCode?: string
   subjectCode?: string
 }
