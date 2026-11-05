@@ -26,7 +26,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const supabase = getServiceClient()
   const { data, error } = await supabase
     .from("students")
-    .select("id, student_id, name, email, department, grade, university_code, subject_code, created_at")
+    .select("id, student_id, name, email, department, grade, attendance_number, university_code, subject_code, created_at")
     .eq("id", id)
     .maybeSingle()
   if (error) {
@@ -42,6 +42,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     email: row.email as string | undefined,
     department: row.department as string | undefined,
     grade: row.grade as string | undefined,
+    attendanceNumber: (row.attendance_number as string | null) ?? undefined,
     // ADR-004 Phase B-2-c: 単一 GET では session 文脈なし → roomNumber / testSessionId は空。
     roomNumber: "",
     createdAt: row.created_at as string,
@@ -58,6 +59,7 @@ interface PatchStudentInput {
   email?: string
   department?: string
   grade?: string
+  attendanceNumber?: string
   universityCode?: string
   subjectCode?: string
 }
@@ -113,6 +115,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (body.email !== undefined) update.email = body.email || null
   if (body.department !== undefined) update.department = body.department || null
   if (body.grade !== undefined) update.grade = body.grade || null
+  if (body.attendanceNumber !== undefined) update.attendance_number = body.attendanceNumber || null
   if (body.universityCode !== undefined) update.university_code = body.universityCode || null
   if (body.subjectCode !== undefined) update.subject_code = body.subjectCode || null
 
@@ -124,7 +127,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .from("students")
     .update(update as never)
     .eq("id", id)
-    .select("id, student_id, name, email, department, grade, university_code, subject_code, created_at")
+    .select("id, student_id, name, email, department, grade, attendance_number, university_code, subject_code, created_at")
     .maybeSingle()
 
   if (updateErr) {
@@ -148,6 +151,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     email: (row.email as string | null) ?? undefined,
     department: (row.department as string | null) ?? undefined,
     grade: (row.grade as string | null) ?? undefined,
+    attendanceNumber: (row.attendance_number as string | null) ?? undefined,
     // session 文脈なし
     roomNumber: "",
     createdAt: row.created_at as string,

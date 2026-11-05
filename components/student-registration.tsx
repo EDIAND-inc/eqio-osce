@@ -25,6 +25,7 @@ export function StudentRegistration() {
   const [formData, setFormData] = useState({
     name: "",
     studentId: "",
+    attendanceNumber: "",
     email: "",
     department: "",
     grade: "",
@@ -123,6 +124,12 @@ export function StudentRegistration() {
     // 2026-05-20 熊木さん指摘: 「追加」ボタンが旧仕様ではローカル state 追加だけで
     // 「登録を確定」ボタンを押さないと DB に反映されない 2 段階フローだった。
     // 確定ボタンの押し忘れで「登録したのに一覧に出ない」混乱が起きるため即時保存に変更。
+    // 2026-11-05 出席番号の重複チェック(警告のみ・登録は通す)
+    const enteredAttendance = formData.attendanceNumber.trim()
+    const dupStudent = enteredAttendance
+      ? students.find((s) => (s.attendanceNumber || "").trim() === enteredAttendance)
+      : undefined
+
     const newStudent: Student = {
       id: crypto.randomUUID(),
       studentId: formData.studentId,
@@ -130,6 +137,7 @@ export function StudentRegistration() {
       email: formData.email || undefined,
       department: formData.department,
       grade: formData.grade || undefined,
+      attendanceNumber: formData.attendanceNumber || undefined,
       roomNumber: formData.roomNumber,
       universityCode: formData.university_code,
       testSessionId: "",
@@ -139,8 +147,13 @@ export function StudentRegistration() {
     try {
       await saveStudents([newStudent])
       setStudents([...students, newStudent])
-      setFormData({ name: "", studentId: "", email: "", department: "", grade: "", roomNumber: "", university_code: "", subjectCode: "" })
-      alert(`${newStudent.name} を登録しました`)
+      setFormData({ name: "", studentId: "", attendanceNumber: "", email: "", department: "", grade: "", roomNumber: "", university_code: "", subjectCode: "" })
+      alert(
+        `${newStudent.name} を登録しました` +
+          (dupStudent
+            ? `\n\n⚠️ 出席番号 ${enteredAttendance} は ${dupStudent.name} さんと重複しています(登録は完了しています)。`
+            : ""),
+      )
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       console.error("[student-registration] handleAddStudent failed:", msg, e)
@@ -170,7 +183,11 @@ export function StudentRegistration() {
 
     for (let i = 1; i < lines.length; i++) {
       const columns = lines[i].split(",").map((s) => s.trim())
-      const [studentId, name, email, department, grade, roomNumber, university_code] = columns
+      const [studentId, name, email, department, grade, roomNumber] = columns
+      // 2026-11-05 出席番号を末尾列に追加。special_master は [..,部屋番号,大学コード,出席番号]、
+      //   通常ユーザーは [..,部屋番号,出席番号]。
+      const university_code = isSpecialMasterUser ? columns[6] || "" : ""
+      const attendanceNumber = isSpecialMasterUser ? columns[7] || "" : columns[6] || ""
       if (studentId && name && department && roomNumber) {
         const roomExists = rooms.some((r) => r.roomNumber === roomNumber)
         if (!roomExists) {
@@ -188,6 +205,7 @@ export function StudentRegistration() {
           email: email || undefined,
           department,
           grade: grade || undefined,
+          attendanceNumber: attendanceNumber || undefined,
           roomNumber,
           universityCode,
           testSessionId: "",
@@ -276,18 +294,21 @@ export function StudentRegistration() {
     let csvContent
     if (accountType === "special_master") {
       csvContent =
-        "No.,学籍番号,大学名,氏名,メールアドレス,学部・学科,学年,部屋番号\n" +
+        "No.,学籍番号,出席番号,大学名,氏名,メールアドレス,学部・学科,学年,部屋番号\n" +
         students
           .map(
             (s, index) =>
-              `${index + 1},${s.studentId},${universities[s.universityCode || ""] || ""},${s.name},${s.email || ""},${s.department},${s.grade || ""},${s.roomNumber}`,
+              `${index + 1},${s.studentId},${s.attendanceNumber || ""},${universities[s.universityCode || ""] || ""},${s.name},${s.email || ""},${s.department},${s.grade || ""},${s.roomNumber}`,
           )
           .join("\n")
     } else {
       csvContent =
-        "No.,学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号\n" +
+        "No.,学籍番号,出席番号,氏名,メールアドレス,学部・学科,学年,部屋番号\n" +
         students
-          .map((s, index) => `${index + 1},${s.studentId},${s.name},${s.email || ""},${s.department},${s.roomNumber}`)
+          .map(
+            (s, index) =>
+              `${index + 1},${s.studentId},${s.attendanceNumber || ""},${s.name},${s.email || ""},${s.department},${s.grade || ""},${s.roomNumber}`,
+          )
           .join("\n")
     }
 
@@ -302,8 +323,8 @@ export function StudentRegistration() {
     // 2026-05-20 副田さん仕様: special_master のみ大学コード列あり、通常ユーザーはなし
     const template =
       accountType === "special_master"
-        ? "学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号,大学コード\n2024001,山田太郎,yamada@example.com,医学部医学科,4年,1,dentshowa\n2024002,佐藤花子,,看護学部看護学科,5年,2,kanagawadent"
-        : "学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号\n2024001,山田太郎,yamada@example.com,医学部医学科,4年,1\n2024002,佐藤花子,,看護学部看護学科,5年,2"
+        ? "学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号,大学コード,出席番号\n2024001,山田太郎,yamada@example.com,医学部医学科,4年,1,dentshowa,12\n2024002,佐藤花子,,看護学部看護学科,5年,2,kanagawadent,13"
+        : "学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号,出席番号\n2024001,山田太郎,yamada@example.com,医学部医学科,4年,1,12\n2024002,佐藤花子,,看護学部看護学科,5年,2,13"
     const blob = csvDownloadBlob(template)
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
@@ -473,6 +494,15 @@ export function StudentRegistration() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="attendanceNumber">出席番号（任意）</Label>
+                    <Input
+                      id="attendanceNumber"
+                      placeholder="例: 12（学年で変わる）"
+                      value={formData.attendanceNumber}
+                      onChange={(e) => setFormData({ ...formData, attendanceNumber: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="name">氏名 *</Label>
                     <Input
                       id="name"
@@ -614,15 +644,15 @@ export function StudentRegistration() {
                     <pre className="text-xs bg-background p-3 rounded overflow-x-auto">
                       {accountType === "special_master" ? (
                         <>
-                          学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号,大学コード{"\n"}
-                          2024001,山田太郎,yamada@example.com,医学部医学科,4年,1,dentshowa{"\n"}
-                          2024002,佐藤花子,,看護学部看護学科,5年,2,kanagawadent
+                          学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号,大学コード,出席番号{"\n"}
+                          2024001,山田太郎,yamada@example.com,医学部医学科,4年,1,dentshowa,12{"\n"}
+                          2024002,佐藤花子,,看護学部看護学科,5年,2,kanagawadent,13
                         </>
                       ) : (
                         <>
-                          学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号{"\n"}
-                          2024001,山田太郎,yamada@example.com,医学部医学科,4年,1{"\n"}
-                          2024002,佐藤花子,,看護学部看護学科,5年,2
+                          学籍番号,氏名,メールアドレス,学部・学科,学年,部屋番号,出席番号{"\n"}
+                          2024001,山田太郎,yamada@example.com,医学部医学科,4年,1,12{"\n"}
+                          2024002,佐藤花子,,看護学部看護学科,5年,2,13
                         </>
                       )}
                     </pre>
@@ -886,6 +916,7 @@ export function StudentRegistration() {
                     <tr className="border-b">
                       {accountType === "special_master" && <th className="text-left p-3 font-semibold">大学名</th>}
                       <th className="text-left p-3 font-semibold">学籍番号</th>
+                      <th className="text-left p-3 font-semibold">出席番号</th>
                       <th className="text-left p-3 font-semibold">氏名</th>
                       <th className="text-left p-3 font-semibold">メールアドレス</th>
                       <th className="text-left p-3 font-semibold">学部・学科</th>
@@ -894,12 +925,27 @@ export function StudentRegistration() {
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student) => (
+                    {[...students]
+                      .sort((a, b) => {
+                        // 2026-11-05 出席番号順(数値優先、空欄は末尾)、同値は学籍番号順
+                        const aa = (a.attendanceNumber || "").trim()
+                        const bb = (b.attendanceNumber || "").trim()
+                        if (aa && bb) {
+                          const na = Number.parseInt(aa, 10)
+                          const nb = Number.parseInt(bb, 10)
+                          if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb
+                          if (aa !== bb) return aa.localeCompare(bb)
+                        } else if (aa && !bb) return -1
+                        else if (!aa && bb) return 1
+                        return (a.studentId || "").localeCompare(b.studentId || "")
+                      })
+                      .map((student) => (
                       <tr key={student.id} className="border-b hover:bg-muted/50">
                         {accountType === "special_master" && (
                           <td className="p-3">{universities[student.universityCode || ""] || "-"}</td>
                         )}
                         <td className="p-3 font-medium">{student.studentId}</td>
+                        <td className="p-3">{student.attendanceNumber || "-"}</td>
                         <td className="p-3">{student.name}</td>
                         <td className="p-3">{student.email || "-"}</td>
                         <td className="p-3">{student.department}</td>

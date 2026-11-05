@@ -64,7 +64,7 @@ interface RoomData {
   // 2026-07-10 副田さん要望: slot 別 (教員①/教員②/患者役) 集計
   teacherSlots: SlotStats[]
   patientSlots: SlotStats[]
-  students: Array<{ id: string; name: string; status: string; isCompleted: boolean; totalScore: number; alertCount: number; combinedScore: number; passResult?: "合格" | "不合格" | ""; completedBy?: string[] }>
+  students: Array<{ id: string; name: string; attendanceNumber?: string; status: string; isCompleted: boolean; totalScore: number; alertCount: number; combinedScore: number; passResult?: "合格" | "不合格" | ""; completedBy?: string[] }>
   universityCode?: string
 }
 
@@ -568,6 +568,7 @@ const AdminDashboard = () => {
               return {
                 id: student.studentId,
                 name: student.name,
+                attendanceNumber: student.attendanceNumber || undefined,
                 status: statusInfo?.status || "unknown",
                 isCompleted: statusInfo?.isCompleted || false,
                 totalScore: totalScore,
@@ -845,6 +846,7 @@ const AdminDashboard = () => {
             return {
               id: student.studentId,
               name: student.name,
+              attendanceNumber: student.attendanceNumber || undefined,
               status: statusInfo?.status || "unknown",
               isCompleted: statusInfo?.isCompleted || false,
               totalScore: totalScore,
@@ -1493,6 +1495,7 @@ const AdminDashboard = () => {
                       <thead>
                         <tr className="border-b">
                           <th className="text-left py-2">学籍番号</th>
+                          <th className="text-left py-2">出席番号</th>
                           <th className="text-left py-2">氏名</th>
                           <th className="text-center py-2">出欠</th>
                           <th className="text-center py-2">合計点</th>
@@ -1531,6 +1534,7 @@ const AdminDashboard = () => {
                             title="クリックで評価の詳細(アラート該当設問)を表示"
                           >
                             <td className={`py-2 ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.id}</td>
+                            <td className={`py-2 ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.attendanceNumber || "-"}</td>
                             <td className={`py-2 ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.name}</td>
                             <td className="text-center py-2">
                               <span
