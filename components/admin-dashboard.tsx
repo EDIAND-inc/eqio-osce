@@ -20,6 +20,16 @@ import {
   type EvaluationResult,
 } from "@/lib/data-storage"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSession } from "@/lib/auth/use-session"
@@ -222,6 +232,13 @@ const AdminDashboard = () => {
   //   赤表示 = alertCount > ackedCount。対応済押下で ackedCount=現在のalertCount を保存して赤を消す。
   //   新たなアラートで alertCount がさらに増えたら再び赤くなる(見落とし防止)。key は roomNumber。
   const [alertAcks, setAlertAcks] = useState<Record<string, number>>({})
+  // 2026-11-06 副田さん要望: 「対応済」押下時に中央の確認モーダルを出す(誤操作防止)。
+  //   確認対象の部屋を保持し、OK で handleAcknowledgeRoom を実行する。
+  const [pendingAckRoom, setPendingAckRoom] = useState<{
+    roomNumber: string
+    roomName?: string
+    alertCount: number
+  } | null>(null)
   // 2026-11-05 学生アラート詳細モーダル: クリックした学生の評価者別アラート該当設問を表示。
   const [alertDetailStudent, setAlertDetailStudent] = useState<{ id: string; name: string; uuid?: string } | null>(null)
   const [students, setStudents] = useState<Student[]>([])
@@ -1206,7 +1223,11 @@ const AdminDashboard = () => {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  void handleAcknowledgeRoom(room.roomNumber, room.alertCount)
+                                  setPendingAckRoom({
+                                    roomNumber: room.roomNumber,
+                                    roomName: room.roomName,
+                                    alertCount: room.alertCount,
+                                  })
                                 }}
                                 className="rounded-full border border-critical/40 bg-background px-1.5 py-0.5 text-[10px] font-bold text-critical hover:bg-critical/10 transition-colors"
                                 title="このカードの赤(要注意)表示を解除します（対応済にする）"
@@ -1664,6 +1685,33 @@ const AdminDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 2026-11-06 「対応済」確認モーダル(中央表示)。OK で赤表示を解除する。 */}
+      <AlertDialog open={!!pendingAckRoom} onOpenChange={(open) => !open && setPendingAckRoom(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>このカードを「対応済」にしますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              部屋 {pendingAckRoom?.roomNumber}
+              {pendingAckRoom?.roomName ? `（${pendingAckRoom.roomName}）` : ""}
+              の赤い「要注意」表示を解除します。新たなアラートが発生した場合は、再び要注意表示に戻ります。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingAckRoom) {
+                  void handleAcknowledgeRoom(pendingAckRoom.roomNumber, pendingAckRoom.alertCount)
+                }
+                setPendingAckRoom(null)
+              }}
+            >
+              対応済にする
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
