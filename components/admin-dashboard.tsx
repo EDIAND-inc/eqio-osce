@@ -959,9 +959,17 @@ const AdminDashboard = () => {
   const alertDetailData = useMemo(() => {
     if (!alertDetailStudent || !selectedRoom) return null
     const sid = alertDetailStudent.id
+    // 2026-11-05 修正: room.students[].id は学籍番号だが、exam_results / attendance は学生UUIDを
+    //   キーに保存されている。学籍番号→UUID を students から解決して照合する
+    //   (アラート件数は正しいのに詳細モーダルが「該当なし」になるバグの修正)。
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const matchedStudent = (students as any[]).find(
+      (s) => s.studentId === sid && (!selectedRoom || s.roomNumber === selectedRoom),
+    )
+    const studentUuid: string | undefined = matchedStudent?.id
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const studentEvals = (evaluations as any[]).filter(
-      (e) => e.studentId === sid && e.roomNumber === selectedRoom,
+      (e) => (e.studentId === studentUuid || e.studentId === sid) && e.roomNumber === selectedRoom,
     )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groups = studentEvals.map((e: any) => {
@@ -991,7 +999,7 @@ const AdminDashboard = () => {
     })
     const totalAlerts = groups.reduce((s: number, g: { items: unknown[] }) => s + g.items.length, 0)
     return { groups, totalAlerts }
-  }, [alertDetailStudent, selectedRoom, selectedRoomData, evaluations, tests])
+  }, [alertDetailStudent, selectedRoom, selectedRoomData, evaluations, tests, students])
 
   // 2026-05-07: special_master 以外のロールでは自大学に固定して絞り込む
   // (これまで非 special_master では試験セッションセレクタ自体が無かったので問題化していなかった)
