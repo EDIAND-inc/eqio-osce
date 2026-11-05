@@ -54,6 +54,8 @@ interface ExamQuestionsRendererProps {
   onComment?: (compositeKey: string, value: string) => void
   /** コメントの最大文字数 */
   commentMaxLength?: number
+  /** 2026-11-05 副田さん要望: 未入力項目ハイライト用の compositeKey */
+  highlightedKey?: string | null
 }
 
 export function ExamQuestionsRenderer({
@@ -65,6 +67,7 @@ export function ExamQuestionsRenderer({
   comments,
   onComment,
   commentMaxLength = 100,
+  highlightedKey,
 }: ExamQuestionsRendererProps) {
   return (
     <>
@@ -97,14 +100,23 @@ export function ExamQuestionsRenderer({
                     typeof selectedOption === "number" &&
                     selectedOption <= question.commentRequiredMax
                   const commentMissing = commentRequired && commentText.trim() === ""
+                  const isHighlighted = highlightedKey != null && highlightedKey === compositeKey
                   return (
                     <div
                       key={compositeKey}
+                      id={`exam-q-${compositeKey}`}
                       // 2026-07-12 デザイン Phase 2-1: 未回答/回答済み/アラートを行の質感で区別。
                       //   採点済みは淡い水色、アラート対象は左に赤帯。
-                      className={`rounded-lg transition-colors ${
+                      //   2026-11-05 副田さん要望: 未入力ハイライト(次の学生へ移動時のスクロール先)。
+                      className={`scroll-mt-28 rounded-lg transition-colors ${
                         isAlertTarget ? "border-l-[3px] border-critical/60" : ""
-                      } ${answered ? "bg-primary/[0.04]" : "hover:bg-muted/40"}`}
+                      } ${
+                        isHighlighted
+                          ? "ring-2 ring-amber-400 bg-amber-100"
+                          : answered
+                            ? "bg-primary/[0.04]"
+                            : "hover:bg-muted/40"
+                      }`}
                     >
                     <div className={`flex items-start gap-3 sm:gap-4 px-3 py-2.5 ${isAlertTarget ? "pl-2.5" : ""}`}>
                       <div className="flex-shrink-0 w-7 pt-2 text-sm font-semibold text-muted-foreground tnum text-right">

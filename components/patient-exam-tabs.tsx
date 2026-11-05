@@ -82,6 +82,8 @@ export default function PatientExamTabs({
       /* localStorage 不可でも無視 */
     }
   }
+  // 2026-11-05 副田さん要望: 次の学生へ移動時、未入力があればその設問をハイライト+スクロール
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
   const [attendanceStatus, setAttendanceStatus] = useState<Record<string, "present" | "absent" | "pending">>({})
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({})
   const [questions, setQuestions] = useState<QuestionWithMeta[]>([])
@@ -211,6 +213,7 @@ export default function PatientExamTabs({
   }, [testId, patientRoomNumber, patientEmail, router])
 
   const handleAnswerChange = async (compositeKey: string, value: number | null) => {
+    setHighlightedKey(null)
     const student = assignedStudents[activeStudentIndex]
     if (!student) return
 
@@ -383,14 +386,36 @@ export default function PatientExamTabs({
       const curAnswers = studentAnswers[current.id] || {}
       const curComments = studentComments[current.id] || {}
       const present = attendanceStatus[current.id] === "present"
-      const allAnswered = countAnswered(curAnswers) === questions.length
-      const noMissing = missingRequiredComments(questions, curAnswers, curComments).length === 0
-      if (present && !isStudentDone(current.id) && allAnswered && noMissing) {
-        if (window.confirm(`${current.name} さんは全問入力済みですが未完了です。完了にしますか?`)) {
-          await handleMarkComplete(current.id)
+      const movingForward = index > activeStudentIndex
+      if (present && !isStudentDone(current.id)) {
+        const answered = countAnswered(curAnswers)
+        // 2026-11-05 副田さん要望: 前へ進む時に未入力があれば、最初の未入力設問へスクロール+ハイライトして知らせる(移動は止める)。
+        if (answered < questions.length && movingForward) {
+          const firstUnanswered = questions.find(
+            (q: any) => typeof curAnswers[q.compositeKey || `${q.categoryNumber}-${q.number}`] !== "number",
+          )
+          if (firstUnanswered) {
+            const fq = firstUnanswered as any
+            const key = fq.compositeKey || `${fq.categoryNumber}-${fq.number}`
+            // wizard(1問ずつ)では行スクロールできないので一覧表示に切替えてからハイライト
+            setViewMode("list")
+            setHighlightedKey(key)
+            window.alert(`未入力の項目が ${questions.length - answered} 件あります。ハイライトした項目を確認して入力してください。`)
+            setTimeout(() => {
+              document.getElementById(`exam-q-${key}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }, 80)
+            return
+          }
+        }
+        const noMissing = missingRequiredComments(questions, curAnswers, curComments).length === 0
+        if (answered === questions.length && noMissing) {
+          if (window.confirm(`${current.name} さんは全問入力済みですが未完了です。完了にしますか?`)) {
+            await handleMarkComplete(current.id)
+          }
         }
       }
     }
+    setHighlightedKey(null)
     setActiveStudentIndex(index)
   }
 
@@ -471,7 +496,10 @@ export default function PatientExamTabs({
                     : "border-gray-200 hover:border-primary/50"
                 }`}
               >
-                <div className="font-medium text-sm mb-2 text-center truncate">{student.name}</div>
+                <div className="font-medium text-sm mb-1 text-center truncate">{student.name}</div>
+                {student.attendanceNumber ? (
+                  <div className="mb-1 text-center text-[11px] text-muted-foreground">出席番号 {student.attendanceNumber}</div>
+                ) : null}
 
                 <div className="flex gap-1 mb-2">
                   <div
@@ -510,7 +538,7 @@ export default function PatientExamTabs({
         <div className="sticky top-0 z-30 -mx-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <h2 className="text-base font-semibold">{activeStudent?.name}の評価</h2>
           <span className="text-xs text-muted-foreground">
-            {activeStudent?.studentId}・{answeredCount}/{questions.length}回答済み
+            出席番号 {activeStudent?.attendanceNumber || "—"}・学籍番号 {activeStudent?.studentId}・{answeredCount}/{questions.length}回答済み
           </span>
           <span className="text-xs text-muted-foreground">テスト: {selectedTest?.title || "評価シート"}</span>
         </div>
@@ -575,6 +603,7 @@ export default function PatientExamTabs({
                   comments={studentComments[activeStudent.id] || {}}
                   onComment={handleCommentChange}
                   commentMaxLength={MAX_COMMENT_LENGTH}
+                  highlightedKey={highlightedKey}
                 />
 
                 {/* 2026-07-24 熊木先生要望: 総評コメント(評価全体で 1 つ) */}

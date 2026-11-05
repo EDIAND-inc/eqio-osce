@@ -80,6 +80,8 @@ export default function TeacherExamTabs({
   const [editMode, setEditMode] = useState<Record<string, boolean>>({})
   const [questions, setQuestions] = useState<any[]>([])
   const [teacherName, setTeacherName] = useState("")
+  // 2026-11-05 副田さん要望: 次の学生へ移動時、未入力があればその設問をハイライト+スクロール
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   // 2026-05-08 ADR-001 §1.2 F4 Phase A.1: 経過時間タイマーを共通フックに
   const elapsedTime = useElapsedTimer()
@@ -221,6 +223,7 @@ export default function TeacherExamTabs({
   // 2026-05-08 ADR-001 §1.2 F4 Phase A.1: getTestSessionId は @/lib/exam/utils から import
 
   const handleAnswerChange = async (compositeKey: string, optionValue: number | null) => {
+    setHighlightedKey(null)
     const activeStudent = assignedStudents[activeStudentIndex]
     if (!activeStudent) return
 
@@ -454,14 +457,34 @@ export default function TeacherExamTabs({
       const curAnswers = studentAnswers[current.id] || {}
       const curComments = studentComments[current.id] || {}
       const present = attendanceStatus[current.id] === "present"
-      const allAnswered = countAnswered(curAnswers) === questions.length
-      const noMissing = missingRequiredComments(questions, curAnswers, curComments).length === 0
-      if (present && !isStudentDone(current.id) && allAnswered && noMissing) {
-        if (window.confirm(`${current.name} さんは全問入力済みですが未完了です。完了にしますか?`)) {
-          await handleMarkComplete(current.id)
+      const movingForward = index > activeStudentIndex
+      if (present && !isStudentDone(current.id)) {
+        const answered = countAnswered(curAnswers)
+        // 2026-11-05 副田さん要望: 前へ進む時に未入力があれば、最初の未入力設問へスクロール+ハイライトして知らせる(移動は止める)。
+        if (answered < questions.length && movingForward) {
+          const firstUnanswered = questions.find(
+            (q: any) => typeof curAnswers[q.compositeKey || `${q.categoryNumber}-${q.number}`] !== "number",
+          )
+          if (firstUnanswered) {
+            const key = firstUnanswered.compositeKey || `${firstUnanswered.categoryNumber}-${firstUnanswered.number}`
+            setHighlightedKey(key)
+            window.alert(`未入力の項目が ${questions.length - answered} 件あります。ハイライトした項目を確認して入力してください。`)
+            setTimeout(() => {
+              document.getElementById(`exam-q-${key}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }, 60)
+            return
+          }
+        }
+        // 全問入力済み・未完了 → 完了確認
+        const noMissing = missingRequiredComments(questions, curAnswers, curComments).length === 0
+        if (answered === questions.length && noMissing) {
+          if (window.confirm(`${current.name} さんは全問入力済みですが未完了です。完了にしますか?`)) {
+            await handleMarkComplete(current.id)
+          }
         }
       }
     }
+    setHighlightedKey(null)
     setActiveStudentIndex(index)
   }
 
@@ -559,7 +582,10 @@ export default function TeacherExamTabs({
                 }`}
               >
                 {/* 名前（上部） */}
-                <div className="font-medium text-sm mb-2 text-center truncate">{student.name}</div>
+                <div className="font-medium text-sm mb-1 text-center truncate">{student.name}</div>
+                {student.attendanceNumber ? (
+                  <div className="mb-1 text-center text-[11px] text-muted-foreground">出席番号 {student.attendanceNumber}</div>
+                ) : null}
 
                 {/* 出席、欠席、完了（中段） */}
                 <div className="flex gap-1 mb-2">
@@ -618,7 +644,7 @@ export default function TeacherExamTabs({
         <div className="sticky top-0 z-30 -mx-1 border-b bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <h2 className="text-lg font-semibold">{activeStudent?.name}の評価</h2>
           <p className="text-sm text-muted-foreground">
-            {activeStudent?.studentId} - {answeredCount}/{questions.length}回答済み
+            出席番号 {activeStudent?.attendanceNumber || "—"}　/　学籍番号 {activeStudent?.studentId} - {answeredCount}/{questions.length}回答済み
           </p>
           <p className="text-xs font-medium text-muted-foreground">テスト: {selectedTest?.title || "評価シート"}</p>
         </div>
@@ -651,6 +677,7 @@ export default function TeacherExamTabs({
               comments={studentComments[activeStudent.id] || {}}
               onComment={handleCommentChange}
               commentMaxLength={MAX_COMMENT_LENGTH}
+              highlightedKey={highlightedKey}
             />
 
             {/* 2026-07-24 熊木先生要望: 総評コメント(評価全体で 1 つ) */}

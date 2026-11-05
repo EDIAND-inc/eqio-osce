@@ -183,6 +183,7 @@ export function ExamResultsScreen() {
         return {
           name: student.name,
           studentId: student.studentId,
+          attendanceNumber: student.attendanceNumber || "",
           status: status || "未記録",
           // 2026-07-12 副田さん要望: 欠席は採点不要なので「完了」扱い。出席は評価完了で完了。
           isCompleted: isAbsent ? true : (isPresent ? (evaluation?.isCompleted || false) : false),
@@ -190,6 +191,19 @@ export function ExamResultsScreen() {
           score: isPresent ? (evaluation?.totalScore || 0) : 0,
           alertCount: studentAlertCountMap.get(student.id) || 0,
         }
+      })
+      // 2026-11-05 副田さん要望: 出席番号順(数値優先、空欄は末尾)に並べる
+      details.sort((a, b) => {
+        const aa = (a.attendanceNumber || "").trim()
+        const bb = (b.attendanceNumber || "").trim()
+        if (aa && bb) {
+          const na = Number.parseInt(aa, 10)
+          const nb = Number.parseInt(bb, 10)
+          if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb
+          if (aa !== bb) return aa.localeCompare(bb)
+        } else if (aa && !bb) return -1
+        else if (!aa && bb) return 1
+        return (a.studentId || "").localeCompare(b.studentId || "")
       })
       setStudentDetails(details)
     } catch (error) {
@@ -292,6 +306,7 @@ export function ExamResultsScreen() {
                     <thead className="bg-muted">
                       <tr>
                         <th className="text-left p-3 text-sm font-medium">学籍番号</th>
+                        <th className="text-left p-3 text-sm font-medium">出席番号</th>
                         <th className="text-left p-3 text-sm font-medium">氏名</th>
                         <th className="text-center p-3 text-sm font-medium">出欠</th>
                         <th className="text-center p-3 text-sm font-medium">状態</th>
@@ -303,6 +318,7 @@ export function ExamResultsScreen() {
                       {studentDetails.map((student, index) => (
                         <tr key={index} className={`border-t ${student.alertCount > 0 ? "bg-red-50" : ""}`}>
                           <td className={`p-3 text-sm ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.studentId}</td>
+                          <td className={`p-3 text-sm ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.attendanceNumber || "-"}</td>
                           <td className={`p-3 text-sm ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.name}</td>
                           <td className="p-3 text-sm text-center">
                             {/* 2026-07-12 デザイン Phase 1: 共通 StatusPill に統一 */}
