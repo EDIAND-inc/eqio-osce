@@ -64,7 +64,7 @@ interface RoomData {
   // 2026-07-10 副田さん要望: slot 別 (教員①/教員②/患者役) 集計
   teacherSlots: SlotStats[]
   patientSlots: SlotStats[]
-  students: Array<{ id: string; name: string; attendanceNumber?: string; status: string; isCompleted: boolean; totalScore: number; alertCount: number; combinedScore: number; passResult?: "合格" | "不合格" | ""; completedBy?: string[] }>
+  students: Array<{ id: string; uuid?: string; name: string; attendanceNumber?: string; status: string; isCompleted: boolean; totalScore: number; alertCount: number; combinedScore: number; passResult?: "合格" | "不合格" | ""; completedBy?: string[] }>
   universityCode?: string
 }
 
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
   //   新たなアラートで alertCount がさらに増えたら再び赤くなる(見落とし防止)。key は roomNumber。
   const [alertAcks, setAlertAcks] = useState<Record<string, number>>({})
   // 2026-11-05 学生アラート詳細モーダル: クリックした学生の評価者別アラート該当設問を表示。
-  const [alertDetailStudent, setAlertDetailStudent] = useState<{ id: string; name: string } | null>(null)
+  const [alertDetailStudent, setAlertDetailStudent] = useState<{ id: string; name: string; uuid?: string } | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [patients, setPatients] = useState<PatientRole[]>([])
@@ -567,6 +567,7 @@ const AdminDashboard = () => {
               })
               return {
                 id: student.studentId,
+                uuid: student.id,
                 name: student.name,
                 attendanceNumber: student.attendanceNumber || undefined,
                 status: statusInfo?.status || "unknown",
@@ -845,6 +846,7 @@ const AdminDashboard = () => {
             })
             return {
               id: student.studentId,
+              uuid: student.id,
               name: student.name,
               attendanceNumber: student.attendanceNumber || undefined,
               status: statusInfo?.status || "unknown",
@@ -959,14 +961,11 @@ const AdminDashboard = () => {
   const alertDetailData = useMemo(() => {
     if (!alertDetailStudent || !selectedRoom) return null
     const sid = alertDetailStudent.id
-    // 2026-11-05 修正: room.students[].id は学籍番号だが、exam_results / attendance は学生UUIDを
-    //   キーに保存されている。学籍番号→UUID を students から解決して照合する
-    //   (アラート件数は正しいのに詳細モーダルが「該当なし」になるバグの修正)。
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const matchedStudent = (students as any[]).find(
-      (s) => s.studentId === sid && (!selectedRoom || s.roomNumber === selectedRoom),
-    )
-    const studentUuid: string | undefined = matchedStudent?.id
+    // 2026-11-05 修正: room.students[].id は表示用の学籍番号だが、exam_results / attendance は
+    //   学生UUID(students.id)をキーに保存されている。room.students に持たせた uuid で照合する
+    //   (アラート件数は正しいのに詳細モーダルが「該当なし」になるバグの修正。students state は
+    //    更新経路で再設定されないため、room.students 経由で UUID を渡す)。
+    const studentUuid = alertDetailStudent.uuid
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const studentEvals = (evaluations as any[]).filter(
       (e) => (e.studentId === studentUuid || e.studentId === sid) && e.roomNumber === selectedRoom,
@@ -999,7 +998,7 @@ const AdminDashboard = () => {
     })
     const totalAlerts = groups.reduce((s: number, g: { items: unknown[] }) => s + g.items.length, 0)
     return { groups, totalAlerts }
-  }, [alertDetailStudent, selectedRoom, selectedRoomData, evaluations, tests, students])
+  }, [alertDetailStudent, selectedRoom, selectedRoomData, evaluations, tests])
 
   // 2026-05-07: special_master 以外のロールでは自大学に固定して絞り込む
   // (これまで非 special_master では試験セッションセレクタ自体が無かったので問題化していなかった)
@@ -1537,7 +1536,7 @@ const AdminDashboard = () => {
                           .map((student) => (
                           <tr
                             key={student.id}
-                            onClick={() => setAlertDetailStudent({ id: student.id, name: student.name })}
+                            onClick={() => setAlertDetailStudent({ id: student.id, name: student.name, uuid: student.uuid })}
                             className={`border-b cursor-pointer hover:bg-muted/40 ${student.alertCount > 0 ? "bg-red-50 hover:bg-red-100" : ""}`}
                             title="クリックで評価の詳細(アラート該当設問)を表示"
                           >
