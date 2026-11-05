@@ -41,6 +41,8 @@ interface SlotStats {
   completedCount: number
   alertCount: number
   averageScore: number
+  // 2026-11-05 簡易ログイン状況
+  lastLoginAt?: string | null
 }
 
 interface RoomData {
@@ -69,10 +71,53 @@ interface RoomData {
 const SLOT_LABELS_TEACHER = ["教員①", "教員②", "教員③", "教員④"]
 const SLOT_LABELS_PATIENT = ["患者役", "患者役②", "患者役③", "患者役④"]
 
+// 2026-11-05 簡易ログイン状況: last_login_at が「本日」かどうかで表示を切り替える。
+function isLoggedInToday(at?: string | null): boolean {
+  if (!at) return false
+  const d = new Date(at)
+  if (Number.isNaN(d.getTime())) return false
+  const now = new Date()
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  )
+}
+function formatLoginTime(at?: string | null): string {
+  if (!at) return ""
+  const d = new Date(at)
+  if (Number.isNaN(d.getTime())) return ""
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+}
+// 部屋カード用: 名前の横に出す小さなログインドット(緑=本日ログイン済 / 灰=未)。
+function LoginDot({ at }: { at?: string | null }) {
+  const today = isLoggedInToday(at)
+  return (
+    <span
+      className={`h-1.5 w-1.5 rounded-full shrink-0 ${today ? "bg-success" : "bg-muted-foreground/30"}`}
+      title={today ? `本日ログイン済 ${formatLoginTime(at)}` : "本日 未ログイン"}
+    />
+  )
+}
+// 部屋詳細モーダル用: ●本日 HH:MM / ○未ログイン のバッジ。
+function LoginStatusBadge({ at }: { at?: string | null }) {
+  return isLoggedInToday(at) ? (
+    <span className="text-[11px] rounded-full bg-success/15 text-success px-1.5 py-0.5 font-medium whitespace-nowrap">
+      ● 本日 {formatLoginTime(at)}
+    </span>
+  ) : (
+    <span className="text-[11px] rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 whitespace-nowrap">
+      ○ 未ログイン
+    </span>
+  )
+}
+
 interface PersonWithEmail {
   name: string
   assignedRoomNumber: string
   email?: string
+  // 2026-11-05 簡易ログイン状況
+  lastLoginAt?: string | null
 }
 
 interface EvalRow {
@@ -118,6 +163,7 @@ function buildSlotStats(
       completedCount: completed.size,
       alertCount: alerts.size,
       averageScore: avg,
+      lastLoginAt: p.lastLoginAt ?? null,
     }
   })
 }
@@ -1190,7 +1236,10 @@ const AdminDashboard = () => {
                                     : ""}
                                   :
                                 </span>
-                                <span className="font-medium truncate ml-1">{name}</span>
+                                <span className="font-medium truncate ml-1 inline-flex items-center gap-1 min-w-0">
+                                  <LoginDot at={room.teacherSlots[i]?.lastLoginAt} />
+                                  <span className="truncate">{name}</span>
+                                </span>
                               </div>
                             ))
                           )}
@@ -1209,7 +1258,10 @@ const AdminDashboard = () => {
                                     : ""}
                                   :
                                 </span>
-                                <span className="font-medium truncate ml-1">{name}</span>
+                                <span className="font-medium truncate ml-1 inline-flex items-center gap-1 min-w-0">
+                                  <LoginDot at={room.patientSlots[i]?.lastLoginAt} />
+                                  <span className="truncate">{name}</span>
+                                </span>
                               </div>
                             ))
                           )}
@@ -1309,9 +1361,10 @@ const AdminDashboard = () => {
                   {selectedRoomData.teacherSlots && selectedRoomData.teacherSlots.length > 0 ? (
                     <div className="text-base space-y-0.5">
                       {selectedRoomData.teacherSlots.map((s) => (
-                        <div key={`t-${s.slotIndex}`}>
+                        <div key={`t-${s.slotIndex}`} className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-xs text-muted-foreground mr-1">{s.label}</span>
-                          {s.personName}
+                          <span>{s.personName}</span>
+                          <LoginStatusBadge at={s.lastLoginAt} />
                         </div>
                       ))}
                     </div>
@@ -1324,9 +1377,10 @@ const AdminDashboard = () => {
                   {selectedRoomData.patientSlots && selectedRoomData.patientSlots.length > 0 ? (
                     <div className="text-base space-y-0.5">
                       {selectedRoomData.patientSlots.map((s) => (
-                        <div key={`p-${s.slotIndex}`}>
+                        <div key={`p-${s.slotIndex}`} className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-xs text-muted-foreground mr-1">{s.label}</span>
-                          {s.personName}
+                          <span>{s.personName}</span>
+                          <LoginStatusBadge at={s.lastLoginAt} />
                         </div>
                       ))}
                     </div>

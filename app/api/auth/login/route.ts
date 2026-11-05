@@ -28,6 +28,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { attachLoginCookie } from "@/lib/auth/http-cookie"
 import { verifyCredentials, getRedirectTo } from "@/lib/auth/verify"
+import { getServiceClient } from "@/lib/api/_shared"
 
 interface LoginRequestBody {
   loginId?: string
@@ -80,6 +81,19 @@ export async function POST(request: NextRequest) {
   // outcome.kind === "match"
   const { user } = outcome
   const redirectTo = getRedirectTo(user)
+
+  // 2026-11-05 簡易ログイン状況: teacher/patient のログイン成功時に last_login_at を記録(best-effort)。
+  //   失敗してもログイン自体は成功させる。
+  if (user.source === "teachers" || user.source === "patients") {
+    try {
+      // last_login_at は生成済み Database 型に未登録のため as any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = getServiceClient() as any
+      await sb.from(user.source).update({ last_login_at: new Date().toISOString() }).eq("id", user.id)
+    } catch (e) {
+      console.error("[auth/login] last_login_at update failed:", e)
+    }
+  }
 
   const responseBody = {
     user: {
