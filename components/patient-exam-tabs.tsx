@@ -302,6 +302,18 @@ export default function PatientExamTabs({
       return
     }
 
+    // 2026-11-05 副田さん要望: この学生を完了すると全員完了(=評価テスト全体が完了)になる場合は確認する。
+    if (!(completionStatus[studentId] || false)) {
+      const othersDone = assignedStudents
+        .filter((s) => s.id !== studentId)
+        .every((s) => (completionStatus[s.id] || false) || attendanceStatus[s.id] === "absent")
+      if (assignedStudents.length > 0 && othersDone) {
+        if (!window.confirm("これが最後の学生です。完了すると、この評価テスト全体が完了します。完了しますか?")) {
+          return
+        }
+      }
+    }
+
     const previousCompletion = completionStatus[studentId] || false
     setCompletionStatus((prev) => ({
       ...prev,
@@ -363,6 +375,24 @@ export default function PatientExamTabs({
     attendanceStatus[activeStudent.id] === "present" &&
     answeredCount === questions.length &&
     missingRequiredComments(questions, studentAnswers[activeStudent.id] || {}, studentComments[activeStudent.id] || {}).length === 0
+
+  // 2026-11-05 副田さん要望: 全問入力済みなのに未完了のまま別の学生へ移る時は「完了にしますか?」を確認。
+  const switchToStudent = async (index: number) => {
+    const current = assignedStudents[activeStudentIndex]
+    if (current && index !== activeStudentIndex) {
+      const curAnswers = studentAnswers[current.id] || {}
+      const curComments = studentComments[current.id] || {}
+      const present = attendanceStatus[current.id] === "present"
+      const allAnswered = countAnswered(curAnswers) === questions.length
+      const noMissing = missingRequiredComments(questions, curAnswers, curComments).length === 0
+      if (present && !isStudentDone(current.id) && allAnswered && noMissing) {
+        if (window.confirm(`${current.name} さんは全問入力済みですが未完了です。完了にしますか?`)) {
+          await handleMarkComplete(current.id)
+        }
+      }
+    }
+    setActiveStudentIndex(index)
+  }
 
   // 2026-05-08 ADR-001 §1.2 F4 Phase A.1: グループ化を共通フックに
   const groupedQuestions = useGroupedQuestions(questions)
@@ -434,7 +464,7 @@ export default function PatientExamTabs({
             return (
               <div
                 key={student.id}
-                onClick={() => setActiveStudentIndex(index)}
+                onClick={() => switchToStudent(index)}
                 className={`flex-shrink-0 w-44 p-2 rounded-lg border-2 cursor-pointer transition-colors ${
                   activeStudentIndex === index
                     ? "border-primary bg-primary/5"
@@ -477,7 +507,7 @@ export default function PatientExamTabs({
       </div>
 
       <div className="space-y-3">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <div className="sticky top-0 z-30 -mx-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <h2 className="text-base font-semibold">{activeStudent?.name}の評価</h2>
           <span className="text-xs text-muted-foreground">
             {activeStudent?.studentId}・{answeredCount}/{questions.length}回答済み
@@ -582,7 +612,7 @@ export default function PatientExamTabs({
           hasNextStudent={activeStudentIndex < assignedStudents.length - 1}
           onCompleteCurrent={() => handleMarkComplete(activeStudent.id)}
           onEditCurrent={() => handleEnableEdit(activeStudent.id)}
-          onNextStudent={() => setActiveStudentIndex((i) => Math.min(i + 1, assignedStudents.length - 1))}
+          onNextStudent={() => switchToStudent(Math.min(activeStudentIndex + 1, assignedStudents.length - 1))}
           onFinish={() => router.push("/patient/results")}
         />
       )}
