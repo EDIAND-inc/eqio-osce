@@ -147,6 +147,45 @@ export function computeHasAlert(
 }
 
 /**
+ * 2026-11-05 ダッシュボードのアラート詳細モーダル用。
+ * computeHasAlert と同じ判定で、アラート発火している設問の一覧を返す(bool ではなく明細)。
+ */
+export interface AlertItem {
+  number: number
+  compositeKey: string
+  sheetTitle?: string
+  categoryTitle?: string
+  text?: string
+  selectedValue: number
+}
+
+export function getAlertItems(
+  answers: Record<string | number, unknown> | undefined,
+  questions: ReadonlyArray<FlattenedQuestion>,
+): AlertItem[] {
+  const out: AlertItem[] = []
+  if (!answers || !questions) return out
+  for (const q of questions) {
+    if (!q.isAlertTarget || !q.alertOptions || q.alertOptions.length === 0) continue
+    const raw = q.compositeKey != null ? answers[q.compositeKey] : answers[q.number]
+    if (typeof raw !== "number") continue
+    const scoreMap = Array.isArray(q.scoreMap) && q.scoreMap.length > 0 ? q.scoreMap : [1, 2, 3, 4, 5]
+    const position = scoreMap.indexOf(raw)
+    if (position >= 0 && q.alertOptions.includes(position)) {
+      out.push({
+        number: q.number,
+        compositeKey: q.compositeKey,
+        sheetTitle: q.sheetTitle,
+        categoryTitle: q.categoryTitle,
+        text: typeof q.text === "string" ? q.text : undefined,
+        selectedValue: raw,
+      })
+    }
+  }
+  return out
+}
+
+/**
  * EvaluationResult の配列(全件)から、評価者にマッチする行だけを抽出して
  * 学生 ID をキーとする answers / completion / alerts のマップを組み立てる。
  *

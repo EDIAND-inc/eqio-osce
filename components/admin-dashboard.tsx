@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useAutoRefresh } from "@/hooks/use-auto-refresh"
 import { listRoomAlertAcks, upsertRoomAlertAck } from "@/lib/api/room-alert-acknowledgements"
+import { flattenTestQuestions, getAlertItems } from "@/lib/exam/utils"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -175,6 +176,8 @@ const AdminDashboard = () => {
   //   赤表示 = alertCount > ackedCount。対応済押下で ackedCount=現在のalertCount を保存して赤を消す。
   //   新たなアラートで alertCount がさらに増えたら再び赤くなる(見落とし防止)。key は roomNumber。
   const [alertAcks, setAlertAcks] = useState<Record<string, number>>({})
+  // 2026-11-05 学生アラート詳細モーダル: クリックした学生の評価者別アラート該当設問を表示。
+  const [alertDetailStudent, setAlertDetailStudent] = useState<{ id: string; name: string } | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [patients, setPatients] = useState<PatientRole[]>([])
@@ -904,6 +907,44 @@ const AdminDashboard = () => {
     }
   }
 
+  // 2026-11-05 クリックした学生のアラート該当設問を評価者別に算出(モーダル用)。
+  const alertDetailData = useMemo(() => {
+    if (!alertDetailStudent || !selectedRoom) return null
+    const sid = alertDetailStudent.id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const studentEvals = (evaluations as any[]).filter(
+      (e) => e.studentId === sid && e.roomNumber === selectedRoom,
+    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const groups = studentEvals.map((e: any) => {
+      const role = (e.evaluatorType as "teacher" | "patient") || "teacher"
+      // 対応する test を (testSessionId, roleType) で特定して設問を取得
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const test = (tests as any[]).find(
+        (t) => t.roleType === role && (!e.testSessionId || t.testSessionId === e.testSessionId),
+      )
+      const flattened = test ? flattenTestQuestions(test) : []
+      const items = getAlertItems(e.answers as Record<string, unknown>, flattened)
+      const slots =
+        role === "teacher"
+          ? selectedRoomData?.teacherSlots || []
+          : selectedRoomData?.patientSlots || []
+      const slot = slots.find(
+        (s) => (s.personEmail || "").toLowerCase() === (e.evaluatorId || "").toLowerCase(),
+      )
+      const label = slot ? slot.label : role === "teacher" ? "教員" : "患者役"
+      return {
+        key: `${role}-${e.evaluatorId || ""}`,
+        label,
+        personName: slot?.personName || "",
+        role,
+        items,
+      }
+    })
+    const totalAlerts = groups.reduce((s: number, g: { items: unknown[] }) => s + g.items.length, 0)
+    return { groups, totalAlerts }
+  }, [alertDetailStudent, selectedRoom, selectedRoomData, evaluations, tests])
+
   // 2026-05-07: special_master 以外のロールでは自大学に固定して絞り込む
   // (これまで非 special_master では試験セッションセレクタ自体が無かったので問題化していなかった)
   const userUniversityCode =
@@ -1429,7 +1470,12 @@ const AdminDashboard = () => {
                             return (a.id || "").localeCompare(b.id || "")
                           })
                           .map((student) => (
-                          <tr key={student.id} className={`border-b ${student.alertCount > 0 ? "bg-red-50" : ""}`}>
+                          <tr
+                            key={student.id}
+                            onClick={() => setAlertDetailStudent({ id: student.id, name: student.name })}
+                            className={`border-b cursor-pointer hover:bg-muted/40 ${student.alertCount > 0 ? "bg-red-50 hover:bg-red-100" : ""}`}
+                            title="クリックで評価の詳細(アラート該当設問)を表示"
+                          >
                             <td className={`py-2 ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.id}</td>
                             <td className={`py-2 ${student.alertCount > 0 ? "text-red-900" : ""}`}>{student.name}</td>
                             <td className="text-center py-2">
@@ -1489,6 +1535,66 @@ const AdminDashboard = () => {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 2026-11-05 学生アラート詳細モーダル: 学生クリックで評価者別のアラート該当設問を表示 */}
+      <Dialog open={!!alertDetailStudent} onOpenChange={(open) => !open && setAlertDetailStudent(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[min(48rem,95vw)]">
+          <DialogHeader>
+            <DialogTitle>
+              {alertDetailStudent?.name}（{alertDetailStudent?.id}）のアラート詳細
+            </DialogTitle>
+          </DialogHeader>
+          {alertDetailData && (
+            <div className="space-y-4">
+              <div
+                className={`rounded-md px-3 py-2 text-sm font-semibold ${
+                  alertDetailData.totalAlerts > 0
+                    ? "bg-red-50 text-red-800 border border-red-200"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {alertDetailData.totalAlerts > 0
+                  ? `アラート ${alertDetailData.totalAlerts} 件`
+                  : "アラート該当の設問はありません"}
+              </div>
+              {alertDetailData.groups
+                .filter((g) => g.items.length > 0)
+                .map((g) => (
+                  <div key={g.key} className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <span className={g.role === "teacher" ? "text-blue-700" : "text-pink-700"}>
+                        {g.label}
+                      </span>
+                      {g.personName && <span className="text-muted-foreground">{g.personName}</span>}
+                      <span className="text-xs rounded-full bg-red-100 text-red-800 px-2 py-0.5 font-semibold">
+                        アラート {g.items.length} 件
+                      </span>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {g.items.map((it, i) => (
+                        <li
+                          key={`${g.key}-${it.compositeKey}-${i}`}
+                          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-red-700 font-medium truncate">
+                              {it.categoryTitle || it.sheetTitle || ""}
+                            </span>
+                            <span className="text-[10px] rounded-full bg-red-600 text-white px-1.5 py-0.5 font-bold shrink-0">
+                              アラート該当
+                            </span>
+                          </div>
+                          <div className="text-red-900 mt-0.5">{it.text || `設問 ${it.number}`}</div>
+                          <div className="text-xs text-red-700 mt-0.5">選択値: {it.selectedValue}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
             </div>
           )}
         </DialogContent>
