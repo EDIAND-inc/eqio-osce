@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useAutoRefresh } from "@/hooks/use-auto-refresh"
+import { listRoomAlertAcks, upsertRoomAlertAck } from "@/lib/api/room-alert-acknowledgements"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -170,6 +171,10 @@ const AdminDashboard = () => {
   const router = useRouter()
   const [userRole, setUserRole] = useState<string | null>(null)
   const [rooms, setRooms] = useState<RoomData[]>([])
+  // 2026-11-05 副田さん要望: 部屋カードのアラート赤表示を「対応済」で解除(セッション×部屋ごとにDB保存)。
+  //   赤表示 = alertCount > ackedCount。対応済押下で ackedCount=現在のalertCount を保存して赤を消す。
+  //   新たなアラートで alertCount がさらに増えたら再び赤くなる(見落とし防止)。key は roomNumber。
+  const [alertAcks, setAlertAcks] = useState<Record<string, number>>({})
   const [students, setStudents] = useState<Student[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [patients, setPatients] = useState<PatientRole[]>([])
@@ -840,8 +845,64 @@ const AdminDashboard = () => {
 
   const handleRefresh = () => handleRefreshInner()
   const autoRefreshHandler = useCallback(() => handleRefreshInner({ silent: true }), [handleRefreshInner])
-  // 案 C: visibilitychange (タブに戻った瞬間) + 30 秒間隔 polling
-  useAutoRefresh(autoRefreshHandler, 30000)
+  // 案 C: visibilitychange (タブに戻った瞬間) + 定期 polling
+  // 2026-11-05 副田さん要望: 自動更新をこまめに(30秒 → 15秒)。
+  useAutoRefresh(autoRefreshHandler, 15000)
+
+  // 2026-11-05 「対応済」(アラート赤解除)状態をロード。rooms 更新(=初回/自動更新)ごとに最新化し、
+  //   頻繁な自動更新でも解除が戻らないようにする。
+  const loadAlertAcks = useCallback(async () => {
+    const sid = typeof window !== "undefined" ? sessionStorage.getItem("testSessionId") || "" : ""
+    if (!sid || sid === "all") {
+      setAlertAcks({})
+      return
+    }
+    const acks = await listRoomAlertAcks(sid)
+    const map: Record<string, number> = {}
+    for (const a of acks) map[a.roomNumber] = a.acknowledgedAlertCount
+    setAlertAcks(map)
+  }, [])
+
+  useEffect(() => {
+    void loadAlertAcks()
+  }, [loadAlertAcks, rooms])
+
+  const handleAcknowledgeRoom = async (roomNumber: string, currentAlertCount: number) => {
+    const sid = typeof window !== "undefined" ? sessionStorage.getItem("testSessionId") || "" : ""
+    if (!sid || sid === "all") {
+      alert("対応済にするには、上部で試験セッションを選択してください。")
+      return
+    }
+    // 楽観的更新 → 失敗時は再読込で戻す
+    setAlertAcks((prev) => ({ ...prev, [roomNumber]: currentAlertCount }))
+    try {
+      await upsertRoomAlertAck({
+        testSessionId: sid,
+        roomNumber,
+        acknowledgedAlertCount: currentAlertCount,
+        acknowledgedBy: userRole || undefined,
+      })
+    } catch (e) {
+      await loadAlertAcks()
+      alert("対応済の保存に失敗しました。もう一度お試しください。")
+    }
+  }
+
+  const handleUnacknowledgeRoom = async (roomNumber: string) => {
+    const sid = typeof window !== "undefined" ? sessionStorage.getItem("testSessionId") || "" : ""
+    if (!sid || sid === "all") return
+    setAlertAcks((prev) => ({ ...prev, [roomNumber]: 0 }))
+    try {
+      await upsertRoomAlertAck({
+        testSessionId: sid,
+        roomNumber,
+        acknowledgedAlertCount: 0,
+        acknowledgedBy: userRole || undefined,
+      })
+    } catch (e) {
+      await loadAlertAcks()
+    }
+  }
 
   // 2026-05-07: special_master 以外のロールでは自大学に固定して絞り込む
   // (これまで非 special_master では試験セッションセレクタ自体が無かったので問題化していなかった)
@@ -867,7 +928,11 @@ const AdminDashboard = () => {
 
   const totalPresentCount = filteredRooms.reduce((sum, room) => sum + room.presentCount, 0)
   const totalCompletedCount = filteredRooms.reduce((sum, room) => sum + room.completedCount, 0)
-  const totalAlertCount = filteredRooms.reduce((sum, room) => sum + room.alertCount, 0)
+  // 2026-11-05 「要注意」KPI は未対応(=赤表示中)のアラートのみ数える。対応済は除外。
+  const totalAlertCount = filteredRooms.reduce(
+    (sum, room) => sum + Math.max(0, room.alertCount - (alertAcks[room.roomNumber] ?? 0)),
+    0,
+  )
   const totalAbsentCount = filteredRooms.reduce((sum, room) => sum + room.absentCount, 0)
   const totalPassCount = filteredRooms.reduce((sum, room) => sum + room.passCount, 0)
 
@@ -1022,20 +1087,50 @@ const AdminDashboard = () => {
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {filteredRooms.map((room) => (
-                  <Card key={room.roomNumber} className={`transition-all cursor-pointer hover:shadow-md ${room.alertCount > 0 ? "bg-critical/[0.04] border-critical/40 ring-1 ring-critical/20 hover:bg-critical/[0.07]" : "bg-card hover:bg-accent/30 hover:border-primary/40"}`} onClick={() => setSelectedRoom(room.roomNumber)}>
+                {filteredRooms.map((room) => {
+                  // 2026-11-05 対応済(DB保存)を加味。赤表示=未対応アラートがある時のみ。
+                  const ackedCount = alertAcks[room.roomNumber] ?? 0
+                  const hasAnyAlert = room.alertCount > 0
+                  const unhandledAlert = room.alertCount > ackedCount
+                  return (
+                  <Card key={room.roomNumber} className={`transition-all cursor-pointer hover:shadow-md ${unhandledAlert ? "bg-critical/[0.04] border-critical/40 ring-1 ring-critical/20 hover:bg-critical/[0.07]" : "bg-card hover:bg-accent/30 hover:border-primary/40"}`} onClick={() => setSelectedRoom(room.roomNumber)}>
                     <CardContent className="p-3">
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-between border-b pb-1.5">
-                          <div>
+                        <div className="flex items-center justify-between border-b pb-1.5 gap-1">
+                          <div className="min-w-0">
                             <div className="font-bold text-sm text-primary">部屋 {room.roomNumber}</div>
                             {room.roomName && <div className="text-[11px] text-muted-foreground truncate">{room.roomName}</div>}
                           </div>
-                          {room.alertCount > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-critical/10 px-1.5 py-0.5 text-[10px] font-bold text-critical">
-                              <span className="h-1 w-1 rounded-full bg-current" />要注意
-                            </span>
-                          )}
+                          {unhandledAlert ? (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-critical/10 px-1.5 py-0.5 text-[10px] font-bold text-critical">
+                                <span className="h-1 w-1 rounded-full bg-current" />要注意
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  void handleAcknowledgeRoom(room.roomNumber, room.alertCount)
+                                }}
+                                className="rounded-full border border-critical/40 bg-background px-1.5 py-0.5 text-[10px] font-bold text-critical hover:bg-critical/10 transition-colors"
+                                title="このカードの赤(要注意)表示を解除します（対応済にする）"
+                              >
+                                対応済
+                              </button>
+                            </div>
+                          ) : hasAnyAlert ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                void handleUnacknowledgeRoom(room.roomNumber)
+                              }}
+                              className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-bold text-success shrink-0 hover:bg-success/20 transition-colors"
+                              title="対応済を取り消して、再び要注意表示に戻します"
+                            >
+                              ✓対応済
+                            </button>
+                          ) : null}
                         </div>
                         <div className="text-xs space-y-0.5">
                           {/* 2026-07-03 副田さん要望: 教員①②/患者役 の全員名を可変表示 */}
@@ -1121,7 +1216,8 @@ const AdminDashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
