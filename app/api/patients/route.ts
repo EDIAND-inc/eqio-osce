@@ -17,6 +17,7 @@ type PatientRow = {
   subject_code?: string | null
   account_type?: string | null
   test_session_id?: string | null
+  last_login_at?: string | null
   created_at: string
 }
 
@@ -39,6 +40,8 @@ function mapPatient(
     testSessionId: (override?.test_session_id ?? row.test_session_id) ?? undefined,
     // 部屋内の①②…順 (assignments JOIN 時のみ)。
     slotIndex: override?.slot_index ?? undefined,
+    // 2026-11-05 簡易ログイン状況
+    lastLoginAt: row.last_login_at ?? undefined,
   }
 }
 

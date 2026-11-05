@@ -37,6 +37,8 @@ export interface Teacher {
   universityCode?: string // 大学コード
   subjectCode?: string // 担当教科コード
   testSessionId?: string // 試験セッションID
+  // 2026-11-05 簡易ログイン状況(本日ログイン済み判定用)
+  lastLoginAt?: string
   // 後方互換用（非推奨）
   accountType?: string
   subjectRole?: string
@@ -57,6 +59,8 @@ export interface Patient {
   accountType?: "special_master" | "university_master" | "admin" // アカウントタイプ
   subjectCode?: string // 担当教科コード
   testSessionId?: string // 試験セッションID
+  // 2026-11-05 簡易ログイン状況
+  lastLoginAt?: string
 }
 
 // 出席状況データの型定義
