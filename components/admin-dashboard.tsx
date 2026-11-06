@@ -696,6 +696,16 @@ const AdminDashboard = () => {
           loadTests(universityCode),
         ])
 
+      // 2026-11-06 修正: 更新時に評価・テストを state に戻していなかったため、試験の切替や
+      //   手動更新の後に学生アラート詳細モーダルが「該当なし」になっていた(件数は roomMap 側で
+      //   算出されるので正しく見えていた)。初回ロードと同じく state に反映する。
+      setEvaluations(Array.isArray(fetchedEvaluations) ? (fetchedEvaluations as unknown as Evaluation[]) : [])
+      setTests(Array.isArray(fetchedTests) ? fetchedTests : [])
+      setStudents(Array.isArray(fetchedStudents) ? fetchedStudents : [])
+      setTeachers(Array.isArray(fetchedTeachers) ? fetchedTeachers : [])
+      setPatients(Array.isArray(fetchedPatients) ? fetchedPatients : [])
+      setAttendanceRecords(Array.isArray(fetchedAttendance) ? fetchedAttendance : [])
+
 
       const roomMap = new Map<string, RoomData>()
 
@@ -991,20 +1001,23 @@ const AdminDashboard = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groups = studentEvals.map((e: any) => {
       const role = (e.evaluatorType as "teacher" | "patient") || "teacher"
-      // 対応する test を (testSessionId, roleType) で特定して設問を取得
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const test = (tests as any[]).find(
-        (t) => t.roleType === role && (!e.testSessionId || t.testSessionId === e.testSessionId),
-      )
-      const flattened = test ? flattenTestQuestions(test) : []
-      const items = getAlertItems(e.answers as Record<string, unknown>, flattened)
       const slots =
         role === "teacher"
           ? selectedRoomData?.teacherSlots || []
           : selectedRoomData?.patientSlots || []
-      const slot = slots.find(
+      const slotIdx = slots.findIndex(
         (s) => (s.personEmail || "").toLowerCase() === (e.evaluatorId || "").toLowerCase(),
       )
+      const slot = slotIdx >= 0 ? slots[slotIdx] : undefined
+      // 対応する test を (testSessionId, roleType) で絞り、作成順で 教員①/教員② の枠に対応させる
+      // (受験者一覧と同じ割り当て。該当枠が無ければ先頭のテスト)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const roleTests = (tests as any[])
+        .filter((t) => t.roleType === role && (!e.testSessionId || t.testSessionId === e.testSessionId))
+        .sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime())
+      const test = (slotIdx >= 0 ? roleTests[slotIdx] : undefined) ?? roleTests[0]
+      const flattened = test ? flattenTestQuestions(test) : []
+      const items = getAlertItems(e.answers as Record<string, unknown>, flattened)
       const label = slot ? slot.label : role === "teacher" ? "教員" : "患者役"
       return {
         key: `${role}-${e.evaluatorId || ""}`,
