@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { PAGE_WIDTH } from "@/components/page-container"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +14,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full space-y-10">
+        <div className={`w-full space-y-10 ${PAGE_WIDTH.form}`}>
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight">
               {/*
@@ -51,7 +52,7 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t bg-background">
-        <div className="mx-auto px-4 py-6">
+        <div className={`mx-auto px-4 md:px-8 py-6 ${PAGE_WIDTH.wide}`}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link href="https://www.ediand.co.jp/" target="_blank" rel="noopener noreferrer">
               <Image

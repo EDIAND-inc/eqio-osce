@@ -1,5 +1,6 @@
 "use client"
 
+import { PAGE_WIDTH } from "@/components/page-container"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -528,7 +529,8 @@ export default function TeacherExamTabs({
         universityCode={session?.universityCode}
         elapsedSeconds={elapsedTime}
       />
-      <div className="container mx-auto px-4 space-y-4">
+      {/* 2026-11-06 デザイン見直し: 評価画面は list(1,280px)。タブレットでは見た目は変わらない */}
+      <div className={`mx-auto w-full px-4 space-y-4 ${PAGE_WIDTH.list}`}>
       <header className="py-0 px-2 bg-background border-b">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">

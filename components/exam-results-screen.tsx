@@ -1,5 +1,6 @@
 "use client"
 
+import { PAGE_WIDTH } from "@/components/page-container"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -221,7 +222,8 @@ export function ExamResultsScreen() {
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-6">
+      {/* 2026-11-06 デザイン見直し: 結果一覧は list(1,280px) */}
+      <div className={`mx-auto space-y-6 ${PAGE_WIDTH.list}`}>
         <div className="flex items-center justify-between">
           <Button onClick={handleBackToExam} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />

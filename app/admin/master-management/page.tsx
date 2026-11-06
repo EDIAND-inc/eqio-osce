@@ -27,7 +27,7 @@ export default function MasterManagementPage() {
   return (
     // 2026-11-06 デザイン見直し: メニュー画面(1,024px)。見出しの位置・色を他画面とそろえる。
     <PageContainer width="menu" className="space-y-6">
-        <div className="space-y-2">
+        <div className="space-y-1">
           <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
           <div>
             <h1 className="text-3xl font-bold text-primary">マスター管理</h1>

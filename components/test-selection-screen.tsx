@@ -1,5 +1,6 @@
 "use client"
 
+import { PAGE_WIDTH } from "@/components/page-container"
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -538,7 +539,7 @@ export function TestSelectionScreen({ examPath, userType }: TestSelectionScreenP
   if (testSessions.length === 0) {
     return (
       <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-        <div className="mx-auto">
+        <div className={`mx-auto ${PAGE_WIDTH.menu}`}>
           <Card>
             <CardHeader>
               <CardTitle className="text-center">テストセッションが登録されていません</CardTitle>
@@ -559,7 +560,8 @@ export function TestSelectionScreen({ examPath, userType }: TestSelectionScreenP
 
   return (
     <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-4">
+      {/* 2026-11-06 デザイン見直し: 試験選択はメニュー画面なので menu(1,024px) */}
+      <div className={`mx-auto space-y-4 ${PAGE_WIDTH.menu}`}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-primary">評価テスト選択</h1>
