@@ -36,6 +36,7 @@ import {
   type Patient,
 } from "@/lib/data-storage"
 import { computePassResult } from "@/lib/passing"
+import { flattenTestQuestions, getAlertItems } from "@/lib/exam/utils"
 import { useSession } from "@/lib/auth/use-session"
 import { StatusPill, type StatusKind } from "@/components/ui/status-pill"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -319,13 +320,10 @@ export default function StudentsDetailPage() {
       contentScores[`${col.testId}::${col.compositeKey}`] = val
     }
 
-    // 2026-07-24 熊木先生要望: コメント(設問別 + 総評)を教員内部向けに集約
-    const commentEntries: { slot: string; label: string; text: string }[] = []
-    for (const e of studentEvaluations) {
-      const ans = (e as any).answers as Record<string, unknown> | undefined
-      if (!ans) continue
-      const email = ((e as any).evaluatorEmail || (e as any).evaluatorId || "").toLowerCase()
-      const isTeacher = (e as any).evaluatorType === "teacher"
+    // 評価者の枠(教員①/教員②/患者役)を求める。コメント列とアラート列で同じ表記にする。
+    const slotOf = (e: any) => {
+      const email = (e.evaluatorEmail || e.evaluatorId || "").toLowerCase()
+      const isTeacher = e.evaluatorType === "teacher"
       const emails = isTeacher ? roomTeacherEmails : roomPatientEmails
       const idx = emails.indexOf(email)
       const slot = isTeacher
@@ -333,6 +331,15 @@ export default function StudentsDetailPage() {
         : roomPatientEmails.length > 1
           ? `患者役${idx >= 0 ? idx + 1 : ""}`
           : "患者役"
+      return { slot, idx, isTeacher }
+    }
+
+    // 2026-07-24 熊木先生要望: コメント(設問別 + 総評)を教員内部向けに集約
+    const commentEntries: { slot: string; label: string; text: string }[] = []
+    for (const e of studentEvaluations) {
+      const ans = (e as any).answers as Record<string, unknown> | undefined
+      if (!ans) continue
+      const { slot } = slotOf(e)
       for (const [k, v] of Object.entries(ans)) {
         if (typeof v !== "string" || v.trim() === "") continue
         if (k === OVERALL_COMMENT_KEY) {
@@ -342,6 +349,27 @@ export default function StudentsDetailPage() {
           const col = dedupedContentColumns.find((c) => c.compositeKey === ck)
           commentEntries.push({ slot, label: col ? col.questionText || `問${ck}` : `問${ck}`, text: v })
         }
+      }
+    }
+
+    // 2026-11-06 副田さん要望: 受験者一覧にアラート列。
+    //   件数はダッシュボードと同じ「アラートを付けた評価者の数」(exam_results.has_alert)。
+    //   該当設問は評価者の枠に対応するテストの設問から getAlertItems で求める(ダッシュボードの詳細モーダルと同じ判定)。
+    let alertCount = 0
+    const alertEntries: { slot: string; text: string }[] = []
+    for (const e of studentEvaluations) {
+      if (!(e as any).hasAlert) continue
+      alertCount++
+      const { slot, idx, isTeacher } = slotOf(e)
+      const slotTests = isTeacher ? teacherSlotTests : patientSlotTests
+      const test = (idx >= 0 ? slotTests[idx] : undefined) ?? slotTests[0]
+      const items = test
+        ? getAlertItems(((e as any).answers || {}) as Record<string, unknown>, flattenTestQuestions(test as any))
+        : []
+      if (items.length === 0) {
+        alertEntries.push({ slot, text: "該当設問を特定できません" })
+      } else {
+        for (const it of items) alertEntries.push({ slot, text: it.text || `設問 ${it.number}` })
       }
     }
 
@@ -403,6 +431,9 @@ export default function StudentsDetailPage() {
       combinedScore,
       // 2026-07-24: コメント(教員内部)
       commentEntries,
+      // 2026-11-06: アラート
+      alertCount,
+      alertEntries,
     }
   }
 
@@ -452,6 +483,7 @@ export default function StudentsDetailPage() {
     if (key === "email") return student.email || ""
     if (key === "score") return typeof data.score === "number" ? data.score : null
     if (key === "percentage") return data.percentage ?? null
+    if (key === "alert") return data.alertCount
     if (key === "attendance") {
       // 出席 → 欠席 → 未確認 の順
       return data.attendanceStatus === "present" ? 0 : data.attendanceStatus === "absent" ? 1 : 2
@@ -565,6 +597,8 @@ export default function StudentsDetailPage() {
       ...patientHeaders,
       "割合",
       "出欠",
+      "アラート件数",
+      "アラート該当設問",
       "コメント",
     ]
     const rows = sortedRows.map(({ student, data }) => {
@@ -582,6 +616,8 @@ export default function StudentsDetailPage() {
         ...data.patientSlotScores.map((s) => (typeof s === "number" ? String(s) : "")),
         data.percentage != null ? `${data.percentage}%` : "",
         data.attendanceStatus === "present" ? "出席" : data.attendanceStatus === "absent" ? "欠席" : "未確認",
+        String(data.alertCount),
+        data.alertEntries.map((a) => `【${a.slot}】${a.text}`).join(" / "),
         data.commentEntries.map((c) => `【${c.slot}】${c.label}：${c.text}`).join(" / "),
       ]
     })
@@ -687,8 +723,9 @@ export default function StudentsDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* 2026-07-03 副田さん要望: 内容 (問題別点数) の表示切替 */}
-            <div className="mb-3">
+            {/* 2026-07-03 副田さん要望: 内容 (問題別点数) の表示切替
+                2026-11-06: 色の凡例を追加(50%未満=オレンジ行 / アラート=赤バッジ) */}
+            <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -702,6 +739,16 @@ export default function StudentsDetailPage() {
                 )}
                 内容 (全 {dedupedContentColumns.length} 問) を{contentExpanded ? "非表示" : "表示"}
               </Button>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-3.5 w-1 rounded-sm bg-warning" aria-hidden="true" />
+                  割合 50% 未満
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-critical-foreground" aria-hidden="true">!</span>
+                  アラートあり
+                </span>
+              </div>
             </div>
             {/* 2026-07-03 副田さん再要望: 列名スクロール固定 + 横スクロール常に表示
                 shadcn <Table> は内部で overflow-x-auto の div を wrap するため、
@@ -753,6 +800,8 @@ export default function StudentsDetailPage() {
                     ))}
                     <th onClick={() => toggleSort("percentage")} className={`h-10 px-2 text-right align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>割合{sortCaret("percentage")}</th>
                     <th onClick={() => toggleSort("attendance")} className={`h-10 px-2 text-center align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>出欠{sortCaret("attendance")}</th>
+                    {/* 2026-11-06 副田さん要望: アラート列 */}
+                    <th onClick={() => toggleSort("alert")} className={`h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>アラート{sortCaret("alert")}</th>
                     {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
                     <th className="h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white">コメント</th>
                   </tr>
@@ -781,15 +830,16 @@ export default function StudentsDetailPage() {
                     return (
                       <tr
                         key={student.id}
-                        // 2026-07-12: ゼブラ縞 + 50%未満は critical 帯 (左) + 淡い赤 tint
+                        // 2026-07-12: ゼブラ縞 + 50%未満は帯 (左) + 淡い tint
+                        // 2026-11-06 副田さん要望: アラートの赤と区別するため、50%未満はオレンジ(warning)に変更
                         className={`border-b border-border/50 transition-colors ${
                           data.isBelow50
-                            ? "bg-critical/[0.05] hover:bg-critical/[0.09] [&>td:first-child]:shadow-[inset_3px_0_0_var(--color-critical)]"
+                            ? "bg-warning/[0.07] hover:bg-warning/[0.12] [&>td:first-child]:shadow-[inset_3px_0_0_var(--color-warning)]"
                             : "even:bg-muted/25 hover:bg-primary/[0.04]"
                         }`}
                       >
-                        <td className={`p-2 align-middle whitespace-nowrap font-medium ${data.isBelow50 ? "text-critical" : ""}`}>{student.studentId}</td>
-                        <td className={`p-2 align-middle whitespace-nowrap ${data.isBelow50 ? "text-critical font-medium" : ""}`}>{student.name}</td>
+                        <td className={`p-2 align-middle whitespace-nowrap font-medium ${data.isBelow50 ? "text-warning" : ""}`}>{student.studentId}</td>
+                        <td className={`p-2 align-middle whitespace-nowrap ${data.isBelow50 ? "text-warning font-medium" : ""}`}>{student.name}</td>
                         <td className="p-2 align-middle whitespace-nowrap text-muted-foreground">{student.roomNumber || "-"}</td>
                         <td className="p-2 align-middle whitespace-nowrap text-xs font-mono text-muted-foreground">{student.email || "-"}</td>
                         {contentExpanded && dedupedContentColumns.map((col) => {
@@ -818,7 +868,7 @@ export default function StudentsDetailPage() {
                         ))}
                         <td className="p-2 align-middle whitespace-nowrap text-right tnum">
                           {data.percentage != null ? (
-                            <span className={data.isBelow50 ? "font-extrabold text-critical" : "font-bold"}>
+                            <span className={data.isBelow50 ? "font-extrabold text-warning" : "font-bold"}>
                               {data.percentage}%
                             </span>
                           ) : (
@@ -827,6 +877,24 @@ export default function StudentsDetailPage() {
                         </td>
                         <td className="p-2 align-middle whitespace-nowrap text-center">
                           <StatusPill kind={attKind}>{attLabel}</StatusPill>
+                        </td>
+                        {/* 2026-11-06 副田さん要望: アラート(件数 + 評価者・該当設問) */}
+                        <td className="p-2 align-top text-xs min-w-[180px] max-w-[300px]">
+                          {data.alertCount === 0 ? (
+                            <span className="text-muted-foreground/40">-</span>
+                          ) : (
+                            <div className="space-y-1 whitespace-normal">
+                              <span className="inline-flex items-center rounded-full bg-critical px-2 py-0.5 text-[11px] font-bold text-critical-foreground">
+                                アラート {data.alertCount}
+                              </span>
+                              {data.alertEntries.map((a, i) => (
+                                <div key={i} className="leading-snug text-critical">
+                                  <span className="font-semibold">{a.slot}：</span>
+                                  {a.text}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
                         <td className="p-2 align-top text-xs min-w-[220px] max-w-[340px]">
