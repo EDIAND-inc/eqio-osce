@@ -53,7 +53,17 @@ interface UnifiedLoginResponse {
   error?: string
 }
 
-export function UnifiedLoginForm() {
+interface UnifiedLoginFormProps {
+  /**
+   * 2026-11-06: "plain" はログイン画面(LoginScreen)の右半分に置くための枠なし表示。
+   * 見出しを左寄せにし、カードの枠・影・アイコンを省く。
+   */
+  variant?: "card" | "plain"
+}
+
+export function UnifiedLoginForm({ variant = "card" }: UnifiedLoginFormProps = {}) {
+  const plain = variant === "plain"
+  const plainCard = "w-full max-w-sm border-0 bg-transparent shadow-none"
   const router = useRouter()
   const [loginId, setLoginId] = useState("")
   const [password, setPassword] = useState("")
@@ -152,15 +162,17 @@ export function UnifiedLoginForm() {
 
   if (step === "session") {
     return (
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4">
-          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto">
-            <Calendar className="w-6 h-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl text-center">試験の選択</CardTitle>
-          <CardDescription className="text-center">参加する試験を選択してください</CardDescription>
+      <Card className={plain ? plainCard : "w-full max-w-md"}>
+        <CardHeader className={plain ? "space-y-2 px-0" : "space-y-4"}>
+          {!plain && (
+            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto">
+              <Calendar className="w-6 h-6 text-primary" />
+            </div>
+          )}
+          <CardTitle className={plain ? "text-2xl font-bold" : "text-2xl text-center"}>試験の選択</CardTitle>
+          <CardDescription className={plain ? "" : "text-center"}>参加する試験を選択してください</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className={plain ? "space-y-3 px-0" : "space-y-3"}>
           {sessions.map((session) => (
             <Button
               key={session.id}
@@ -194,17 +206,19 @@ export function UnifiedLoginForm() {
 
   return (
     // 2026-07-12 デザイン Phase 3-1: ログインカードの質感を強化 (影・角丸・余白・アイコン)
-    <Card className="w-full max-w-md rounded-2xl border-primary/10 shadow-xl shadow-primary/5">
-      <CardHeader className="space-y-3 pt-8">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto shadow-lg shadow-primary/25">
-          <LogIn className="w-7 h-7 text-white" />
-        </div>
-        <CardTitle className="text-2xl text-center font-bold">ログイン</CardTitle>
-        <CardDescription className="text-center">
+    <Card className={plain ? plainCard : "w-full max-w-md rounded-2xl border-primary/10 shadow-xl shadow-primary/5"}>
+      <CardHeader className={plain ? "space-y-2 px-0 pt-0" : "space-y-3 pt-8"}>
+        {!plain && (
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto shadow-lg shadow-primary/25">
+            <LogIn className="w-7 h-7 text-white" />
+          </div>
+        )}
+        <CardTitle className={plain ? "text-3xl font-bold tracking-tight" : "text-2xl text-center font-bold"}>ログイン</CardTitle>
+        <CardDescription className={plain ? "" : "text-center"}>
           IDまたはメールアドレスとパスワードを入力してください
         </CardDescription>
       </CardHeader>
-      <CardContent className="pb-8">
+      <CardContent className={plain ? "px-0 pb-0" : "pb-8"}>
         <form onSubmit={handleCredentialsSubmit} className="space-y-4">
           {error && (
             <Alert variant="destructive">
@@ -250,11 +264,6 @@ export function UnifiedLoginForm() {
             </Link>
           </div>
 
-          <div className="text-center pt-1">
-            <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              ← トップページに戻る
-            </Link>
-          </div>
         </form>
       </CardContent>
     </Card>

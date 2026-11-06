@@ -5,6 +5,8 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Edit, Trash2, Home, Upload, Download } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +15,6 @@ import { Label } from "@/components/ui/label"
 import { loadRooms, saveRooms, loadSubjects, type Room, type Subject } from "@/lib/data-storage"
 import { useSession } from "@/lib/auth/use-session"
 import { readCsvFile, csvDownloadBlob } from "@/lib/csv"
-import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function RoomManagement() {
@@ -295,19 +296,13 @@ export function RoomManagement() {
   })
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4">
-      <div className="mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">部屋マスター管理</h1>
-            <p className="text-muted-foreground">試験会場の部屋を管理します</p>
-          </div>
-          <Link href="/admin/dashboard">
-            <Button variant="outline">
-              <Home className="w-4 h-4 mr-2" />
-              ダッシュボードに戻る
-            </Button>
-          </Link>
+    // 2026-11-06 デザイン見直し: 列の少ない表なので menu(1,024px)
+    <PageContainer width="menu">
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <BackLink href="/admin/master-management" label="マスター管理に戻る" />
+          <h1 className="text-3xl font-bold text-primary">部屋マスター管理</h1>
+          <p className="text-muted-foreground">試験会場の部屋を管理します</p>
         </div>
 
         <Card>
@@ -504,6 +499,6 @@ export function RoomManagement() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   )
 }

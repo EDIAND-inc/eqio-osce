@@ -2,14 +2,15 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Home, UserPlus, Upload, Download, Trash2, ArrowLeft } from "lucide-react"
+import { UserPlus, Upload, Download, Trash2 } from "lucide-react"
 import {
   saveTeachers,
   loadTeachers,
@@ -373,35 +374,19 @@ export function TeacherRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
+    <PageContainer width="list">
       {(() => {  return null })()}
-      <div className="mx-auto space-y-6">
-        <Card className="mx-auto ">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-primary">教員登録</CardTitle>
-                <CardDescription>教員アカウントの登録と管理</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                {accountType === "special_master" && (
-                  <Link href="/admin/account-management">
-                    <Button variant="outline" size="sm">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      戻る
-                    </Button>
-                  </Link>
-                )}
-                <Link href="/admin/dashboard">
-                  <Button variant="outline" size="sm">
-                    <Home className="mr-2 h-4 w-4" />
-                    ダッシュボード
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
+      <div className="space-y-6">
+        {/* 2026-11-06 デザイン見直し: 見出しだけのカードをやめ、他画面と同じ見出し+戻るリンクに */}
+        <div className="space-y-1">
+          {accountType === "special_master" ? (
+            <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
+          ) : (
+            <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
+          )}
+          <h1 className="text-3xl font-bold text-primary">教員登録</h1>
+          <p className="text-muted-foreground">教員アカウントの登録と管理</p>
+        </div>
 
         <Tabs defaultValue="manual" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -714,6 +699,6 @@ export function TeacherRegistration() {
           </Card>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }

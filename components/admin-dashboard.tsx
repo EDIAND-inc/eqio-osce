@@ -20,6 +20,7 @@ import {
   type EvaluationResult,
 } from "@/lib/data-storage"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { PageContainer } from "@/components/page-container"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1068,8 +1069,9 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto ">
+    <PageContainer width="wide">
+      {/* 2026-11-06 デザイン見直し: 部屋カードを多列で見渡す画面なので wide(1,600px) */}
+      <div>
         <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
           <h1 className="text-2xl font-bold text-[#00417A]">管理者ダッシュボード</h1>
 
@@ -1229,7 +1231,7 @@ const AdminDashboard = () => {
                                     alertCount: room.alertCount,
                                   })
                                 }}
-                                className="rounded-full border border-critical/40 bg-background px-1.5 py-0.5 text-[10px] font-bold text-critical hover:bg-critical/10 transition-colors"
+                                className="relative rounded-full border border-critical/40 bg-background px-1.5 py-0.5 text-[10px] font-bold text-critical hover:bg-critical/10 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
                                 title="このカードの赤(要注意)表示を解除します（対応済にする）"
                               >
                                 対応済
@@ -1242,7 +1244,7 @@ const AdminDashboard = () => {
                                 e.stopPropagation()
                                 void handleUnacknowledgeRoom(room.roomNumber)
                               }}
-                              className="inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-bold text-success shrink-0 hover:bg-success/20 transition-colors"
+                              className="relative inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-bold text-success shrink-0 hover:bg-success/20 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
                               title="対応済を取り消して、再び要注意表示に戻します"
                             >
                               ✓対応済
@@ -1712,7 +1714,7 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   )
 }
 

@@ -14,14 +14,15 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, UserPlus } from "lucide-react"
+import { UserPlus } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { useSession } from "@/lib/auth/use-session"
 import { listSubjects } from "@/lib/api/subjects"
 import { listRooms } from "@/lib/api/rooms"
@@ -199,9 +200,9 @@ export function UnifiedUserRegistrationForm() {
 
   if (isSessionLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <PageContainer width="form">
         <p className="text-muted-foreground">読み込み中…</p>
-      </div>
+      </PageContainer>
     )
   }
   if (!session) {
@@ -210,15 +211,9 @@ export function UnifiedUserRegistrationForm() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
-      <div className="mb-6">
-        <Link href="/admin/account-management">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            アカウント管理に戻る
-          </Button>
-        </Link>
-      </div>
+    <PageContainer width="form" className="space-y-4">
+      {/* 2026-11-06 デザイン見直し: 入力フォーム(768px)。戻るは見出しの上の小さなリンクに統一 */}
+      <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
 
       <Card>
         <CardHeader className="space-y-2">
@@ -366,6 +361,6 @@ export function UnifiedUserRegistrationForm() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

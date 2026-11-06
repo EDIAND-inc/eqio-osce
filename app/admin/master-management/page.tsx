@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, DoorOpen, BookOpen, ArrowLeft } from "lucide-react"
+import { Building2, DoorOpen, BookOpen } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { useSession } from "@/lib/auth/use-session"
 
 /**
@@ -23,20 +25,17 @@ export default function MasterManagementPage() {
   const accountType = session.accountType
 
   return (
-    <div className="container mx-auto p-6">
-        <div className="mb-6 flex items-center gap-4">
-          <Button onClick={() => router.push("/admin/dashboard")} variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            ダッシュボードへ戻る
-          </Button>
+    // 2026-11-06 デザイン見直し: メニュー画面(1,024px)。見出しの位置・色を他画面とそろえる。
+    <PageContainer width="menu" className="space-y-6">
+        <div className="space-y-1">
+          <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
+          <div>
+            <h1 className="text-3xl font-bold text-primary">マスター管理</h1>
+            <p className="text-muted-foreground">大学、部屋、教科のマスターデータを管理します</p>
+          </div>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">マスター管理</h1>
-          <p className="text-muted-foreground">大学、部屋、教科のマスターデータを管理します</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {accountType === "special_master" && (
             <Card
               className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -119,6 +118,6 @@ export default function MasterManagementPage() {
             </CardContent>
           </Card>
         </div>
-    </div>
+    </PageContainer>
   )
 }

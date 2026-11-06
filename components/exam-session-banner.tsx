@@ -16,6 +16,7 @@
  * 呼ばれる想定。
  */
 
+import { PAGE_WIDTH } from "@/components/page-container"
 import { useEffect, useState } from "react"
 import { Calendar, DoorOpen, BookOpen, Clock, Target } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -98,7 +99,7 @@ export function ExamSessionBanner({
 
   return (
     <div className="border-b bg-primary/5">
-      <div className="container mx-auto px-4 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+      <div className={`mx-auto w-full px-4 py-2.5 flex items-center justify-between gap-4 flex-wrap ${PAGE_WIDTH.list}`}>
         <div className="flex items-center gap-x-5 gap-y-1 flex-wrap">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-4 h-4 text-primary" />

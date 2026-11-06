@@ -92,23 +92,31 @@ function isActive(pathname: string, prefixes: string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))
 }
 
-export function AdminTopNav() {
-  const pathname = usePathname() || ""
+/**
+ * 2026-11-06: 上部メニューに表示するタブを返す(非表示なら空配列)。
+ * BackLink が「上部メニューと重複する戻るボタン」を隠す判定にも使う。
+ */
+export function useAdminNavItems(): { isLoading: boolean; items: NavItem[] } {
   const { session, isLoading } = useSession()
-
-  if (isLoading || !session) return null
+  if (isLoading) return { isLoading: true, items: [] }
+  if (!session) return { isLoading: false, items: [] }
   // 教員ログインからの admin 兼任(subject_admin/university_admin) 含めて表示
   const accountType = session.accountType
   if (!accountType || (!ALL_ADMIN_ACCOUNTS.has(accountType) && !HIGHER_ADMIN_ACCOUNTS.has(accountType) && !SUBJECT_ADMIN_ACCOUNTS.has(accountType))) {
-    return null
+    return { isLoading: false, items: [] }
   }
+  return { isLoading: false, items: NAV_ITEMS.filter((item) => item.visibleFor.has(accountType)) }
+}
 
-  const visibleItems = NAV_ITEMS.filter((item) => item.visibleFor.has(accountType))
+export function AdminTopNav() {
+  const pathname = usePathname() || ""
+  const { items: visibleItems } = useAdminNavItems()
   if (visibleItems.length === 0) return null
 
   return (
     <nav className="border-b bg-background sticky top-0 z-10">
-      <div className="mx-auto px-4">
+      {/* 2026-11-06: ヘッダーと同じ最大幅(PAGE_WIDTH.wide = 1,600px)にそろえる */}
+      <div className="mx-auto max-w-[100rem] px-4 md:px-8">
         <div className="flex items-center gap-1 overflow-x-auto">
           {visibleItems.map((item) => {
             const active = isActive(pathname, item.matchPrefixes)

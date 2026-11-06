@@ -14,7 +14,8 @@
  */
 
 import { useEffect, useState, useCallback, useRef, useMemo, Fragment } from "react"
-import Link from "next/link"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Home, ArrowLeft, Save, Search, Trash2, CheckCircle2, RotateCcw, Upload, Download, FileText } from "lucide-react"
+import { Home, Save, Search, Trash2, CheckCircle2, RotateCcw, Upload, Download, FileText } from "lucide-react"
 import { useSession } from "@/lib/auth/use-session"
 import { readCsvFile, csvDownloadBlob, normalizeHalfwidth } from "@/lib/csv"
 import {
@@ -1622,11 +1623,14 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-6">
+    <PageContainer width="wide">
+      <div className="space-y-6">
+        {/* 2026-11-06 デザイン見直し: 割当表は情報量が多いので wide(1,600px)。
+            「戻る」はヘッダー右上と重複するため削除し、ダッシュボードへのリンクは見出しの上に統一 */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold text-primary">試験セッション割当管理</h1>
+          <div className="space-y-1">
+            <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
+            <h1 className="text-3xl font-bold text-primary">試験セッション割当管理</h1>
             <p className="text-sm text-muted-foreground mt-1">
               <span className="font-medium">{testSession.description || "(名称未設定)"}</span>
               {testSession.testDate && ` — ${new Date(testSession.testDate).toLocaleDateString("ja-JP")}`}
@@ -1641,14 +1645,6 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
               </p>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.back()}>
-              <ArrowLeft className="w-4 h-4 mr-1" />戻る
-            </Button>
-            <Link href="/admin/dashboard">
-              <Button variant="outline" size="sm"><Home className="w-4 h-4 mr-1" />ダッシュボード</Button>
-            </Link>
-          </div>
         </div>
 
         {savedMsg && (
@@ -1662,6 +1658,6 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
             Step 2 (次 PR): 各セル inline edit ドロップダウン */}
         {renderStudentTab()}
       </div>
-    </div>
+    </PageContainer>
   )
 }

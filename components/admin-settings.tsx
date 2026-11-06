@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Save } from "lucide-react"
-import Link from "next/link"
+import { Save } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSession } from "@/lib/auth/use-session"
@@ -245,15 +246,11 @@ export function AdminSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-6">
-        <div>
-          <Link href="/admin/dashboard">
-            <Button variant="ghost" size="sm" className="mb-2">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              ダッシュボードに戻る
-            </Button>
-          </Link>
+    // 2026-11-06 デザイン見直し: 入力フォーム(768px)。数値欄は数字に合った幅にする。
+    <PageContainer width="form">
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
           <h1 className="text-3xl font-bold text-primary">システム設定</h1>
           <p className="text-muted-foreground">試験システムの設定を管理</p>
         </div>
@@ -411,6 +408,7 @@ export function AdminSettings() {
                 id="duration"
                 type="number"
                 placeholder="90"
+                className="w-32"
                 value={currentTestDuration}
                 onChange={(e) => handleTestDurationChange(e.target.value)}
               />
@@ -423,6 +421,7 @@ export function AdminSettings() {
                 id="maxUsers"
                 type="number"
                 placeholder="1000"
+                className="w-32"
                 value={currentMaxUsers}
                 onChange={(e) => handleMaxUsersChange(e.target.value)}
               />
@@ -551,6 +550,6 @@ export function AdminSettings() {
           設定を保存
         </Button>
       </div>
-    </div>
+    </PageContainer>
   )
 }
