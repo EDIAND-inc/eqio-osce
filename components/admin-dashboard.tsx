@@ -1461,7 +1461,7 @@ const AdminDashboard = () => {
                                 <th
                                   key={`${s.roleType}-${s.slotIndex}`}
                                   className={`text-center py-1 font-medium whitespace-nowrap ${
-                                    s.roleType === "teacher" ? "text-blue-700" : "text-pink-700"
+                                    s.roleType === "teacher" ? "text-primary" : "text-patient"
                                   }`}
                                 >
                                   <div>{s.label}</div>
@@ -1479,7 +1479,7 @@ const AdminDashboard = () => {
                                 <td
                                   key={`c-${s.roleType}-${s.slotIndex}`}
                                   className={`text-center font-bold ${
-                                    s.roleType === "teacher" ? "text-blue-600" : "text-pink-600"
+                                    s.roleType === "teacher" ? "text-primary" : "text-patient"
                                   }`}
                                 >
                                   {s.completedCount}
@@ -1503,7 +1503,7 @@ const AdminDashboard = () => {
                                 <td
                                   key={`s-${s.roleType}-${s.slotIndex}`}
                                   className={`text-center font-bold ${
-                                    s.roleType === "teacher" ? "text-blue-700" : "text-pink-700"
+                                    s.roleType === "teacher" ? "text-primary" : "text-patient"
                                   }`}
                                 >
                                   {s.averageScore}点
@@ -1537,7 +1537,7 @@ const AdminDashboard = () => {
                           {[...(selectedRoomData.teacherSlots || []), ...(selectedRoomData.patientSlots || [])].map((slot) => (
                             <th
                               key={`hc-${slot.roleType}-${slot.slotIndex}`}
-                              className={`text-center py-2 whitespace-nowrap ${slot.roleType === "teacher" ? "text-blue-700" : "text-pink-700"}`}
+                              className={`text-center py-2 whitespace-nowrap ${slot.roleType === "teacher" ? "text-primary" : "text-patient"}`}
                             >
                               完了
                               <div className="text-xs font-normal">{slot.label}</div>
@@ -1600,7 +1600,7 @@ const AdminDashboard = () => {
                               return (
                                 <td key={`sc-${slot.roleType}-${slot.slotIndex}`} className="text-center py-2">
                                   {done ? (
-                                    <span className={slot.roleType === "teacher" ? "text-blue-600" : "text-pink-600"}>✓</span>
+                                    <span className={slot.roleType === "teacher" ? "text-primary" : "text-patient"}>✓</span>
                                   ) : (
                                     <span className="text-gray-400">-</span>
                                   )}
@@ -1657,7 +1657,7 @@ const AdminDashboard = () => {
                 .map((g) => (
                   <div key={g.key} className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-medium">
-                      <span className={g.role === "teacher" ? "text-blue-700" : "text-pink-700"}>
+                      <span className={g.role === "teacher" ? "text-primary" : "text-patient"}>
                         {g.label}
                       </span>
                       {g.personName && <span className="text-muted-foreground">{g.personName}</span>}

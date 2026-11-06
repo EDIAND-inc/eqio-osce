@@ -384,7 +384,7 @@ export function TeacherRegistration() {
           ) : (
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
           )}
-          <h1 className="text-[28px] leading-tight font-bold text-primary">教員登録</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-foreground">教員登録</h1>
           <p className="text-muted-foreground">教員アカウントの登録と管理</p>
         </div>
 

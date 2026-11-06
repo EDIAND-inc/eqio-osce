@@ -451,7 +451,7 @@ export function StudentRegistration() {
             ) : (
               <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
             )}
-            <h1 className="text-[28px] leading-tight font-bold text-primary">学生登録</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">学生登録</h1>
             <p className="text-muted-foreground">受験者情報を登録・管理</p>
             <p className="text-xs mt-1 px-2 py-1 rounded bg-green-50 border border-green-200 text-green-800 inline-block">
               ✅ 「学生を追加」「CSV 取込」は即時保存されます(確定ボタン不要)。

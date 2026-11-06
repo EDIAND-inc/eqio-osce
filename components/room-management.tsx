@@ -301,7 +301,7 @@ export function RoomManagement() {
       <div className="space-y-6">
         <div className="space-y-1">
           <BackLink href="/admin/master-management" label="マスター管理に戻る" />
-          <h1 className="text-[28px] leading-tight font-bold text-primary">部屋マスター管理</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-foreground">部屋マスター管理</h1>
           <p className="text-muted-foreground">試験会場の部屋を管理します</p>
         </div>
 

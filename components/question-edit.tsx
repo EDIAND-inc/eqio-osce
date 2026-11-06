@@ -498,7 +498,7 @@ export function QuestionEdit({ testId }: QuestionEditProps) {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <BackLink href="/admin/question-management" label="問題管理に戻る" />
-            <h1 className="text-[28px] leading-tight font-bold text-primary">問題編集</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">問題編集</h1>
           </div>
           <Button onClick={handleSave} className="bg-[#00417A] hover:bg-[#00417A]/90" disabled={isSaving}>
             {isSaving ? (

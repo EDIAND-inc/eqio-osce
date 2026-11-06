@@ -25,7 +25,7 @@ export function AdminQuestions() {
               ダッシュボードに戻る
             </Button>
           </Link>
-          <h1 className="text-[28px] leading-tight font-bold text-primary">問題管理</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-foreground">問題管理</h1>
           <p className="text-muted-foreground">試験問題の作成と編集</p>
         </div>
 

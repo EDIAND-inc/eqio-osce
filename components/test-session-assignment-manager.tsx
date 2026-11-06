@@ -1630,7 +1630,7 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="space-y-1">
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
-            <h1 className="text-[28px] leading-tight font-bold text-primary">試験セッション割当管理</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">試験セッション割当管理</h1>
             <p className="text-sm text-muted-foreground mt-1">
               <span className="font-medium">{testSession.description || "(名称未設定)"}</span>
               {testSession.testDate && ` — ${new Date(testSession.testDate).toLocaleDateString("ja-JP")}`}

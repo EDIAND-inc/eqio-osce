@@ -664,7 +664,7 @@ export default function StudentsDetailPage() {
           <div className="space-y-1">
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
             <div className="flex items-center gap-3">
-              <h1 className="text-[28px] leading-tight font-bold text-primary">受験者一覧</h1>
+              <h1 className="text-[28px] leading-tight font-bold text-foreground">受験者一覧</h1>
               <Badge variant={getStatusVariant(sessionStatus)} className="text-sm px-3 py-1">
                 {getStatusLabel(sessionStatus)}
               </Badge>
@@ -772,22 +772,22 @@ export default function StudentsDetailPage() {
               }}
             >
               <table className="w-max min-w-full text-[15px] caption-bottom">
-                <thead className="sticky top-0 z-20 bg-[#f3f8fc] shadow-sm">
+                <thead className="sticky top-0 z-20 bg-[#f1f4f7] shadow-sm">
                   {/* 2026-07-12 デザイン Phase 2-3: ヘッダーをラベル調 (小さめ太字・グレー) に。
                       数値列は右揃え。 */}
                   {/* 2026-07-16 副田さん要望: 列名クリックでソート (再クリックで昇順⇔降順) */}
                   <tr className="border-b-2 border-primary/15">
-                    <th onClick={() => toggleSort("studentId")} className={`sticky left-0 z-10 w-[112px] min-w-[112px] h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>学籍番号{sortCaret("studentId")}</th>
-                    <th onClick={() => toggleSort("name")} className={`sticky left-[112px] z-10 shadow-[inset_-1px_0_0_var(--color-border)] h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>氏名{sortCaret("name")}</th>
-                    <th onClick={() => toggleSort("room")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>部屋{sortCaret("room")}</th>
-                    <th onClick={() => toggleSort("email")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>メールアドレス{sortCaret("email")}</th>
+                    <th onClick={() => toggleSort("studentId")} className={`sticky left-0 z-10 w-[112px] min-w-[112px] h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>学籍番号{sortCaret("studentId")}</th>
+                    <th onClick={() => toggleSort("name")} className={`sticky left-[112px] z-10 shadow-[inset_-1px_0_0_var(--color-border)] h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>氏名{sortCaret("name")}</th>
+                    <th onClick={() => toggleSort("room")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>部屋{sortCaret("room")}</th>
+                    <th onClick={() => toggleSort("email")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>メールアドレス{sortCaret("email")}</th>
                     {contentExpanded && dedupedContentColumns.map((col) => {
                       const ckey = `content:${col.testId}::${col.compositeKey}`
                       return (
                       <th
                         key={`${col.testId}::${col.compositeKey}`}
                         onClick={() => toggleSort(ckey)}
-                        className={`h-11 px-3 text-right align-middle font-bold whitespace-nowrap bg-[#f3f8fc] text-[13px] ${SORTABLE_TH}`}
+                        className={`h-11 px-3 text-right align-middle font-bold whitespace-nowrap bg-[#f1f4f7] text-[13px] ${SORTABLE_TH}`}
                         title={`${col.testTitle} / ${col.sheetTitle} / ${col.categoryTitle} / ${col.questionText}`}
                       >
                         <span className="text-xs text-muted-foreground block">
@@ -797,23 +797,23 @@ export default function StudentsDetailPage() {
                       </th>
                       )
                     })}
-                    <th onClick={() => toggleSort("score")} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>点数{sortCaret("score")}</th>
+                    <th onClick={() => toggleSort("score")} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>点数{sortCaret("score")}</th>
                     {teacherSlotTests.map((_, i) => (
-                      <th key={`th-t-${i}`} onClick={() => toggleSort(`teacher:${i}`)} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-primary whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>
+                      <th key={`th-t-${i}`} onClick={() => toggleSort(`teacher:${i}`)} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-primary whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>
                         教員{teacherSlotTests.length > 1 ? ["①", "②", "③"][i] || `(${i + 1})` : ""}{sortCaret(`teacher:${i}`)}
                       </th>
                     ))}
                     {patientSlotTests.map((_, i) => (
-                      <th key={`th-p-${i}`} onClick={() => toggleSort(`patient:${i}`)} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-patient whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>
+                      <th key={`th-p-${i}`} onClick={() => toggleSort(`patient:${i}`)} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-patient whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>
                         患者役{patientSlotTests.length > 1 ? ["①", "②"][i] || `(${i + 1})` : ""}{sortCaret(`patient:${i}`)}
                       </th>
                     ))}
-                    <th onClick={() => toggleSort("percentage")} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>割合{sortCaret("percentage")}</th>
-                    <th onClick={() => toggleSort("attendance")} className={`h-11 px-3 text-center align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>出欠{sortCaret("attendance")}</th>
+                    <th onClick={() => toggleSort("percentage")} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>割合{sortCaret("percentage")}</th>
+                    <th onClick={() => toggleSort("attendance")} className={`h-11 px-3 text-center align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>出欠{sortCaret("attendance")}</th>
                     {/* 2026-11-06 副田さん要望: アラート列 */}
-                    <th onClick={() => toggleSort("alert")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>アラート{sortCaret("alert")}</th>
+                    <th onClick={() => toggleSort("alert")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7] ${SORTABLE_TH}`}>アラート{sortCaret("alert")}</th>
                     {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
-                    <th className="h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc]">コメント</th>
+                    <th className="h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f1f4f7]">コメント</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -845,7 +845,7 @@ export default function StudentsDetailPage() {
                         className={`border-b border-border/50 transition-colors ${
                           data.isBelow50
                             ? "bg-[#fdf4e9] hover:bg-[#fbead6] [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-warning)]"
-                            : "bg-card even:bg-[#f6fafd] hover:bg-[#ebf4fb]"
+                            : "bg-card even:bg-[#f8fafc] hover:bg-[#edf3f9]"
                         }`}
                       >
                         <td className={`sticky left-0 z-[1] bg-inherit w-[112px] min-w-[112px] px-3 py-2.5 align-middle whitespace-nowrap font-bold tnum ${data.isBelow50 ? "text-warning" : ""}`}>{student.studentId}</td>

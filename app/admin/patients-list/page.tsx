@@ -210,7 +210,7 @@ export default function PatientsListPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
             <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
-            <h1 className="text-[28px] leading-tight font-bold text-primary">患者役一覧</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">患者役一覧</h1>
             <p className="text-muted-foreground">登録済み患者役: {patients.length}名</p>
           </div>
           <div className="flex gap-2">
