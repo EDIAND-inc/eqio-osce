@@ -251,7 +251,7 @@ export function AdminSettings() {
       <div className="space-y-6">
         <div className="space-y-1">
           <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
-          <h1 className="text-3xl font-bold text-primary">システム設定</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-primary">システム設定</h1>
           <p className="text-muted-foreground">試験システムの設定を管理</p>
         </div>
 
@@ -322,6 +322,9 @@ export function AdminSettings() {
               <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-3 items-end">
                 <div>
                   <Label htmlFor="branding-icon">絵文字(画像未設定時のフォールバック)</Label>
+                  <p className="text-[13px] text-muted-foreground -mt-0.5">
+                    絵文字 1〜2 字
+                  </p>
                   <Input
                     id="branding-icon"
                     value={brandingIcon}
@@ -330,12 +333,12 @@ export function AdminSettings() {
                     maxLength={8}
                     className="text-2xl text-center"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    絵文字 1〜2 字
-                  </p>
                 </div>
                 <div>
                   <Label htmlFor="branding-title">タイトル</Label>
+                  <p className="text-[13px] text-muted-foreground -mt-0.5">
+                    最大 60 文字
+                  </p>
                   <Input
                     id="branding-title"
                     value={brandingTitle}
@@ -343,9 +346,6 @@ export function AdminSettings() {
                     placeholder="医療面接評価システム"
                     maxLength={60}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    最大 60 文字
-                  </p>
                 </div>
               </div>
               <div className="rounded-md border bg-secondary/30 p-3 flex items-center gap-2">
@@ -404,6 +404,7 @@ export function AdminSettings() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="duration">試験時間（分）</Label>
+              <p className="text-[13px] text-muted-foreground -mt-0.5">試験の制限時間を設定してください</p>
               <Input
                 id="duration"
                 type="number"
@@ -412,11 +413,11 @@ export function AdminSettings() {
                 value={currentTestDuration}
                 onChange={(e) => handleTestDurationChange(e.target.value)}
               />
-              <p className="text-sm text-muted-foreground">試験の制限時間を設定してください</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="maxUsers">同時アクセス上限</Label>
+              <p className="text-[13px] text-muted-foreground -mt-0.5">同時に受験可能な人数の上限</p>
               <Input
                 id="maxUsers"
                 type="number"
@@ -425,7 +426,6 @@ export function AdminSettings() {
                 value={currentMaxUsers}
                 onChange={(e) => handleMaxUsersChange(e.target.value)}
               />
-              <p className="text-sm text-muted-foreground">同時に受験可能な人数の上限</p>
             </div>
           </CardContent>
         </Card>

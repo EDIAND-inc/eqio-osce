@@ -223,7 +223,7 @@ export default function TeachersListPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-1">
             <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
-            <h1 className="text-3xl font-bold text-primary">教員一覧</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-primary">教員一覧</h1>
             <p className="text-muted-foreground">登録済み教員: {teachers.length}名</p>
           </div>
           <div className="flex gap-2 flex-wrap">

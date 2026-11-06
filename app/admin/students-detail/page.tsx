@@ -62,6 +62,15 @@ export default function StudentsDetailPage() {
     TEST_END_ALLOWED_ROLES.has(session.accountType || "")
   )
   const [students, setStudents] = useState<Student[]>([])
+  // 2026-11-06 見やすさ改善(提案 5): コメントは 2 行で折りたたみ、行ごとに「続きを表示」
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
+  const toggleComment = (id: string) =>
+    setExpandedComments((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   const [evaluations, setEvaluations] = useState<EvaluationResult[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
   const [tests, setTests] = useState<Test[]>([])
@@ -655,7 +664,7 @@ export default function StudentsDetailPage() {
           <div className="space-y-1">
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-primary">受験者一覧</h1>
+              <h1 className="text-[28px] leading-tight font-bold text-primary">受験者一覧</h1>
               <Badge variant={getStatusVariant(sessionStatus)} className="text-sm px-3 py-1">
                 {getStatusLabel(sessionStatus)}
               </Badge>
@@ -746,7 +755,7 @@ export default function StudentsDetailPage() {
                   割合 50% 未満
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-[10px] font-bold text-critical-foreground" aria-hidden="true">!</span>
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-xs font-bold text-critical-foreground" aria-hidden="true">!</span>
                   アラートあり
                 </span>
               </div>
@@ -762,49 +771,49 @@ export default function StudentsDetailPage() {
                 overflowY: "auto",     // 縦は必要時のみ
               }}
             >
-              <table className="w-max min-w-full text-sm caption-bottom">
-                <thead className="sticky top-0 z-20 bg-white shadow-sm">
+              <table className="w-max min-w-full text-[15px] caption-bottom">
+                <thead className="sticky top-0 z-20 bg-[#f3f8fc] shadow-sm">
                   {/* 2026-07-12 デザイン Phase 2-3: ヘッダーをラベル調 (小さめ太字・グレー) に。
                       数値列は右揃え。 */}
                   {/* 2026-07-16 副田さん要望: 列名クリックでソート (再クリックで昇順⇔降順) */}
                   <tr className="border-b-2 border-primary/15">
-                    <th onClick={() => toggleSort("studentId")} className={`h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>学籍番号{sortCaret("studentId")}</th>
-                    <th onClick={() => toggleSort("name")} className={`h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>氏名{sortCaret("name")}</th>
-                    <th onClick={() => toggleSort("room")} className={`h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>部屋{sortCaret("room")}</th>
-                    <th onClick={() => toggleSort("email")} className={`h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>メールアドレス{sortCaret("email")}</th>
+                    <th onClick={() => toggleSort("studentId")} className={`sticky left-0 z-10 w-[112px] min-w-[112px] h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>学籍番号{sortCaret("studentId")}</th>
+                    <th onClick={() => toggleSort("name")} className={`sticky left-[112px] z-10 shadow-[inset_-1px_0_0_var(--color-border)] h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>氏名{sortCaret("name")}</th>
+                    <th onClick={() => toggleSort("room")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>部屋{sortCaret("room")}</th>
+                    <th onClick={() => toggleSort("email")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>メールアドレス{sortCaret("email")}</th>
                     {contentExpanded && dedupedContentColumns.map((col) => {
                       const ckey = `content:${col.testId}::${col.compositeKey}`
                       return (
                       <th
                         key={`${col.testId}::${col.compositeKey}`}
                         onClick={() => toggleSort(ckey)}
-                        className={`h-10 px-2 text-right align-middle font-medium whitespace-nowrap bg-white text-xs ${SORTABLE_TH}`}
+                        className={`h-11 px-3 text-right align-middle font-bold whitespace-nowrap bg-[#f3f8fc] text-[13px] ${SORTABLE_TH}`}
                         title={`${col.testTitle} / ${col.sheetTitle} / ${col.categoryTitle} / ${col.questionText}`}
                       >
-                        <span className="text-[10px] text-muted-foreground block">
+                        <span className="text-xs text-muted-foreground block">
                           {col.roleType === "teacher" ? "教員側" : "患者側"} {col.categoryTitle}
                         </span>
                         <span className="block truncate">{col.questionText}{sortCaret(ckey)}</span>
                       </th>
                       )
                     })}
-                    <th onClick={() => toggleSort("score")} className={`h-10 px-2 text-right align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>点数{sortCaret("score")}</th>
+                    <th onClick={() => toggleSort("score")} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>点数{sortCaret("score")}</th>
                     {teacherSlotTests.map((_, i) => (
-                      <th key={`th-t-${i}`} onClick={() => toggleSort(`teacher:${i}`)} className={`h-10 px-2 text-right align-middle text-[11px] font-bold uppercase tracking-wide text-primary whitespace-nowrap bg-white ${SORTABLE_TH}`}>
+                      <th key={`th-t-${i}`} onClick={() => toggleSort(`teacher:${i}`)} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-primary whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>
                         教員{teacherSlotTests.length > 1 ? ["①", "②", "③"][i] || `(${i + 1})` : ""}{sortCaret(`teacher:${i}`)}
                       </th>
                     ))}
                     {patientSlotTests.map((_, i) => (
-                      <th key={`th-p-${i}`} onClick={() => toggleSort(`patient:${i}`)} className={`h-10 px-2 text-right align-middle text-[11px] font-bold uppercase tracking-wide text-primary/70 whitespace-nowrap bg-white ${SORTABLE_TH}`}>
+                      <th key={`th-p-${i}`} onClick={() => toggleSort(`patient:${i}`)} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-patient whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>
                         患者役{patientSlotTests.length > 1 ? ["①", "②"][i] || `(${i + 1})` : ""}{sortCaret(`patient:${i}`)}
                       </th>
                     ))}
-                    <th onClick={() => toggleSort("percentage")} className={`h-10 px-2 text-right align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>割合{sortCaret("percentage")}</th>
-                    <th onClick={() => toggleSort("attendance")} className={`h-10 px-2 text-center align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>出欠{sortCaret("attendance")}</th>
+                    <th onClick={() => toggleSort("percentage")} className={`h-11 px-3 text-right align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>割合{sortCaret("percentage")}</th>
+                    <th onClick={() => toggleSort("attendance")} className={`h-11 px-3 text-center align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>出欠{sortCaret("attendance")}</th>
                     {/* 2026-11-06 副田さん要望: アラート列 */}
-                    <th onClick={() => toggleSort("alert")} className={`h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white ${SORTABLE_TH}`}>アラート{sortCaret("alert")}</th>
+                    <th onClick={() => toggleSort("alert")} className={`h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc] ${SORTABLE_TH}`}>アラート{sortCaret("alert")}</th>
                     {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
-                    <th className="h-10 px-2 text-left align-middle text-[11px] font-bold uppercase tracking-wide text-muted-foreground whitespace-nowrap bg-white">コメント</th>
+                    <th className="h-11 px-3 text-left align-middle text-[13.5px] font-bold text-foreground/80 whitespace-nowrap bg-[#f3f8fc]">コメント</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -835,39 +844,39 @@ export default function StudentsDetailPage() {
                         // 2026-11-06 副田さん要望: アラートの赤と区別するため、50%未満はオレンジ(warning)に変更
                         className={`border-b border-border/50 transition-colors ${
                           data.isBelow50
-                            ? "bg-warning/[0.07] hover:bg-warning/[0.12] [&>td:first-child]:shadow-[inset_3px_0_0_var(--color-warning)]"
-                            : "even:bg-muted/25 hover:bg-primary/[0.04]"
+                            ? "bg-[#fdf4e9] hover:bg-[#fbead6] [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-warning)]"
+                            : "bg-card even:bg-[#f6fafd] hover:bg-[#ebf4fb]"
                         }`}
                       >
-                        <td className={`p-2 align-middle whitespace-nowrap font-medium ${data.isBelow50 ? "text-warning" : ""}`}>{student.studentId}</td>
-                        <td className={`p-2 align-middle whitespace-nowrap ${data.isBelow50 ? "text-warning font-medium" : ""}`}>{student.name}</td>
-                        <td className="p-2 align-middle whitespace-nowrap text-muted-foreground">{student.roomNumber || "-"}</td>
-                        <td className="p-2 align-middle whitespace-nowrap text-xs font-mono text-muted-foreground">{student.email || "-"}</td>
+                        <td className={`sticky left-0 z-[1] bg-inherit w-[112px] min-w-[112px] px-3 py-2.5 align-middle whitespace-nowrap font-bold tnum ${data.isBelow50 ? "text-warning" : ""}`}>{student.studentId}</td>
+                        <td className={`sticky left-[112px] z-[1] bg-inherit shadow-[inset_-1px_0_0_var(--color-border)] px-3 py-2.5 align-middle whitespace-nowrap ${data.isBelow50 ? "text-warning font-bold" : ""}`}>{student.name}</td>
+                        <td className="px-3 py-2.5 align-middle whitespace-nowrap text-muted-foreground">{student.roomNumber || "-"}</td>
+                        <td className="px-3 py-2.5 align-middle whitespace-nowrap text-[13px] text-muted-foreground">{student.email || "-"}</td>
                         {contentExpanded && dedupedContentColumns.map((col) => {
                           const val = data.contentScores[`${col.testId}::${col.compositeKey}`]
                           return (
                             <td
                               key={`${student.id}-${col.testId}-${col.compositeKey}`}
-                              className="p-2 align-middle text-right text-sm whitespace-nowrap tnum"
+                              className="px-3 py-2.5 align-middle text-right whitespace-nowrap tnum"
                             >
                               {typeof val === "number" ? val : <span className="text-muted-foreground/50">-</span>}
                             </td>
                           )
                         })}
-                        <td className="p-2 align-middle whitespace-nowrap text-right font-bold tnum">
+                        <td className="px-3 py-2.5 align-middle whitespace-nowrap text-right font-bold tnum">
                           {typeof data.score === "number" ? data.score : <span className="text-muted-foreground/50 font-normal">-</span>}
                         </td>
                         {data.teacherSlotScores.map((s, i) => (
-                          <td key={`td-t-${student.id}-${i}`} className="p-2 align-middle whitespace-nowrap text-right tnum text-primary">
+                          <td key={`td-t-${student.id}-${i}`} className="px-3 py-2.5 align-middle whitespace-nowrap text-right tnum text-primary">
                             {typeof s === "number" ? s : <span className="text-muted-foreground/50">-</span>}
                           </td>
                         ))}
                         {data.patientSlotScores.map((s, i) => (
-                          <td key={`td-p-${student.id}-${i}`} className="p-2 align-middle whitespace-nowrap text-right tnum text-primary/70">
+                          <td key={`td-p-${student.id}-${i}`} className="px-3 py-2.5 align-middle whitespace-nowrap text-right tnum text-patient">
                             {typeof s === "number" ? s : <span className="text-muted-foreground/50">-</span>}
                           </td>
                         ))}
-                        <td className="p-2 align-middle whitespace-nowrap text-right tnum">
+                        <td className="px-3 py-2.5 align-middle whitespace-nowrap text-right tnum">
                           {data.percentage != null ? (
                             <span className={data.isBelow50 ? "font-extrabold text-warning" : "font-bold"}>
                               {data.percentage}%
@@ -876,16 +885,16 @@ export default function StudentsDetailPage() {
                             <span className="text-muted-foreground/50">-</span>
                           )}
                         </td>
-                        <td className="p-2 align-middle whitespace-nowrap text-center">
+                        <td className="px-3 py-2.5 align-middle whitespace-nowrap text-center">
                           <StatusPill kind={attKind}>{attLabel}</StatusPill>
                         </td>
                         {/* 2026-11-06 副田さん要望: アラート(件数 + 評価者・該当設問) */}
-                        <td className="p-2 align-top text-xs min-w-[180px] max-w-[300px]">
+                        <td className="px-3 py-2.5 align-top text-[13px] min-w-[200px] max-w-[320px]">
                           {data.alertCount === 0 ? (
                             <span className="text-muted-foreground/40">-</span>
                           ) : (
                             <div className="space-y-1 whitespace-normal">
-                              <span className="inline-flex items-center rounded-full bg-critical px-2 py-0.5 text-[11px] font-bold text-critical-foreground">
+                              <span className="inline-flex items-center rounded-full bg-critical px-2 py-0.5 text-xs font-bold text-critical-foreground">
                                 アラート {data.alertCount}
                               </span>
                               {data.alertEntries.map((a, i) => (
@@ -898,17 +907,30 @@ export default function StudentsDetailPage() {
                           )}
                         </td>
                         {/* 2026-07-24 熊木先生要望: コメント(教員内部) */}
-                        <td className="p-2 align-top text-xs min-w-[220px] max-w-[340px]">
+                        <td className="px-3 py-2.5 align-top text-[13px] min-w-[240px] max-w-[360px]">
                           {data.commentEntries.length === 0 ? (
                             <span className="text-muted-foreground/40">-</span>
                           ) : (
-                            <div className="space-y-1 whitespace-normal">
-                              {data.commentEntries.map((c, i) => (
-                                <div key={i} className="leading-snug">
-                                  <span className="font-semibold text-primary/80">{c.slot}・{c.label}：</span>
-                                  {c.text}
-                                </div>
-                              ))}
+                            <div className="whitespace-normal">
+                              {/* 2026-11-06 見やすさ改善(提案 5): 2 行で折りたたみ。CSV 出力は従来どおり全文。 */}
+                              <div className={`space-y-1 leading-snug ${expandedComments.has(student.id) ? "" : "line-clamp-2"}`}>
+                                {data.commentEntries.map((c, i) => (
+                                  <div key={i} className={expandedComments.has(student.id) ? "" : "inline"}>
+                                    <span className="font-bold text-foreground/80">{c.slot}・{c.label}：</span>
+                                    {c.text}
+                                    {!expandedComments.has(student.id) && i < data.commentEntries.length - 1 && " / "}
+                                  </div>
+                                ))}
+                              </div>
+                              {(data.commentEntries.length > 1 || data.commentEntries.some((c) => c.text.length > 40)) && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleComment(student.id)}
+                                  className="mt-1 text-xs font-bold text-primary hover:underline"
+                                >
+                                  {expandedComments.has(student.id) ? "閉じる" : "続きを表示"}
+                                </button>
+                              )}
                             </div>
                           )}
                         </td>

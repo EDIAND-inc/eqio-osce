@@ -1,12 +1,21 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { BIZ_UDPGothic, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AppVersion } from "@/components/app-version"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+// 2026-11-06 見やすさ改善: 和文・英数字とも「BIZ UDPゴシック」(UD 書体) に統一。
+// 1/l/I・0/O が判別しやすく、Windows の細い游ゴシックへのフォールバックを避ける。
+// 和文は subset 分割されないため preload は無効 (Google の unicode-range 分割で必要分だけ読む)。
+const bizUD = BIZ_UDPGothic({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+  variable: "--font-biz-ud",
+})
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
 
 export const metadata: Metadata = {
   // 2026-05-13: ブランド名を「医療面接評価システム」に統一
@@ -38,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" className={`${bizUD.variable} ${geistMono.variable}`}>
       <body className={`font-sans antialiased`}>
         {children}
         <AppVersion />

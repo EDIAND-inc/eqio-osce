@@ -108,7 +108,7 @@ export function AppShell({ children, requireAuth = true, loginPath = "/" }: AppS
                 </div>
                 <Badge
                   variant={deriveRoleVariant(session.role, session.accountType)}
-                  className="text-[10px] px-1.5 py-0 h-4 mt-0.5"
+                  className="text-xs px-1.5 py-0 h-4 mt-0.5"
                 >
                   {deriveRoleLabel(session.role, session.accountType)}
                 </Badge>

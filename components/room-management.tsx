@@ -301,7 +301,7 @@ export function RoomManagement() {
       <div className="space-y-6">
         <div className="space-y-1">
           <BackLink href="/admin/master-management" label="マスター管理に戻る" />
-          <h1 className="text-3xl font-bold text-primary">部屋マスター管理</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-primary">部屋マスター管理</h1>
           <p className="text-muted-foreground">試験会場の部屋を管理します</p>
         </div>
 
@@ -483,7 +483,7 @@ export function RoomManagement() {
                                 <Button size="sm" variant="outline" onClick={() => handleStartEdit(room)}>
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(room.id)}>
+                                <Button size="sm" variant="outline" className="text-muted-foreground hover:text-critical hover:bg-critical/10 hover:border-critical/40" onClick={() => handleDelete(room.id)}>
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </>

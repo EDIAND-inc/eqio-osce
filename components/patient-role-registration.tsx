@@ -314,7 +314,7 @@ export function PatientRoleRegistration() {
           ) : (
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
           )}
-          <h1 className="text-3xl font-bold text-primary">患者役登録</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-primary">患者役登録</h1>
           <p className="text-muted-foreground">患者役アカウントの登録と管理</p>
         </div>
 

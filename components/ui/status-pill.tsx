@@ -28,11 +28,11 @@ const STYLES: Record<StatusKind, { cls: string; label: string }> = {
   present:    { cls: "text-success  bg-success/10  border-success/25",  label: "出席" },
   absent:     { cls: "text-warning  bg-warning/10  border-warning/25",  label: "欠席" },
   pending:    { cls: "text-muted-foreground bg-muted border-border",    label: "未確認" },
-  complete:   { cls: "text-primary  bg-primary/10  border-primary/25",  label: "完了" },
+  complete:   { cls: "text-success  bg-success/10  border-success/25",  label: "完了" },
   incomplete: { cls: "text-muted-foreground bg-muted border-border",    label: "未完了" },
   alert:      { cls: "text-critical bg-critical/10 border-critical/30", label: "アラート" },
   pass:       { cls: "text-success  bg-success/10  border-success/25",  label: "合格" },
-  fail:       { cls: "text-critical bg-critical/10 border-critical/30", label: "不合格" },
+  fail:       { cls: "text-warning  bg-warning/10  border-warning/25",  label: "不合格" },
   neutral:    { cls: "text-muted-foreground bg-muted/60 border-border",  label: "-" },
 }
 

@@ -1348,7 +1348,7 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
                       <Fragment key={`th-teacher-${i}`}>
                         <th className="p-2 text-left whitespace-nowrap">
                           教員{["①", "②", "③", "④", "⑤"][i] || `(${i + 1})`}
-                          <span className="text-[10px] text-amber-700 font-normal block">部屋共通</span>
+                          <span className="text-xs text-amber-700 font-normal block">部屋共通</span>
                         </th>
                         <th className="p-2 text-left whitespace-nowrap">
                           教員{["①", "②", "③", "④", "⑤"][i] || `(${i + 1})`}の権限
@@ -1358,7 +1358,7 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
                     {Array.from({ length: patientSlotCount }, (_, i) => (
                       <th key={`th-patient-${i}`} className="p-2 text-left whitespace-nowrap">
                         患者役{patientSlotCount > 1 ? ["①", "②", "③"][i] || `(${i + 1})` : ""}
-                        <span className="text-[10px] text-amber-700 font-normal block">部屋共通</span>
+                        <span className="text-xs text-amber-700 font-normal block">部屋共通</span>
                       </th>
                     ))}
                     <th className="p-2 text-left whitespace-nowrap">状態</th>
@@ -1630,7 +1630,7 @@ export function TestSessionAssignmentManager({ sessionId }: Props) {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="space-y-1">
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
-            <h1 className="text-3xl font-bold text-primary">試験セッション割当管理</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-primary">試験セッション割当管理</h1>
             <p className="text-sm text-muted-foreground mt-1">
               <span className="font-medium">{testSession.description || "(名称未設定)"}</span>
               {testSession.testDate && ` — ${new Date(testSession.testDate).toLocaleDateString("ja-JP")}`}
