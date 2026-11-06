@@ -30,6 +30,7 @@ const BUBBLE_GRID: CSSProperties = {
   backgroundImage:
     "radial-gradient(circle at center, transparent 0 6px, rgb(255 255 255 / 0.13) 6px 7.5px, transparent 8px)",
   backgroundSize: "26px 26px",
+  backgroundPosition: "right bottom",
   maskImage: "linear-gradient(115deg, transparent 5%, black 45%, black 70%, transparent 100%)",
   WebkitMaskImage: "linear-gradient(115deg, transparent 5%, black 45%, black 70%, transparent 100%)",
 }
@@ -86,7 +87,13 @@ export function LoginScreen() {
           <div className="space-y-4">
             {sub && <p className="text-xs font-semibold tracking-[0.2em] text-sky-100/80">OSCE 医療面接評価</p>}
             <h1 className="text-balance">
-              <span className="block text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">{main}</span>
+              <span
+                className={`block font-extrabold tracking-tight [word-break:auto-phrase] ${
+                  sub ? "text-4xl sm:text-5xl lg:text-6xl" : "text-3xl sm:text-4xl lg:text-5xl leading-tight"
+                }`}
+              >
+                {main}
+              </span>
               {sub && (
                 <span className="mt-3 block max-w-md text-base font-medium leading-snug text-sky-50/85 lg:text-lg">
                   {sub}
