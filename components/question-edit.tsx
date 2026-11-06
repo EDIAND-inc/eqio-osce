@@ -498,7 +498,7 @@ export function QuestionEdit({ testId }: QuestionEditProps) {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <BackLink href="/admin/question-management" label="問題管理に戻る" />
-            <h1 className="text-3xl font-bold text-primary">問題編集</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-primary">問題編集</h1>
           </div>
           <Button onClick={handleSave} className="bg-[#00417A] hover:bg-[#00417A]/90" disabled={isSaving}>
             {isSaving ? (
@@ -673,7 +673,7 @@ export function QuestionEdit({ testId }: QuestionEditProps) {
                                 className="w-12 h-7 text-xs"
                               />
                             ))}
-                            <span className="ml-1 text-[10px] text-muted-foreground">(カテゴリー全体に適用 / 負数不可、0 は許可)</span>
+                            <span className="ml-1 text-xs text-muted-foreground">(カテゴリー全体に適用 / 負数不可、0 は許可)</span>
                           </div>
                         )
                       })()}

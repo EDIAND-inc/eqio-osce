@@ -13,7 +13,7 @@ export default function TermsPage() {
           トップに戻る
         </Link>
 
-        <h1 className="text-3xl font-bold text-primary mb-8">利用規約</h1>
+        <h1 className="text-[28px] leading-tight font-bold text-primary mb-8">利用規約</h1>
 
         <div className="bg-background border rounded-lg p-6 sm:p-8 space-y-6 text-sm leading-relaxed text-foreground">
           <p className="text-muted-foreground">

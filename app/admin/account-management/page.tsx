@@ -41,7 +41,7 @@ export default function AccountManagementPage() {
         <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-primary">アカウント管理</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-primary">アカウント管理</h1>
             <p className="text-muted-foreground">学生・教員・患者役の管理</p>
           </div>
           {/* Phase 9d-4a: 統合ユーザー追加(教員 + 患者役) */}

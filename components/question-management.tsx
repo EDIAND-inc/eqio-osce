@@ -451,7 +451,7 @@ export function QuestionManagement() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
-            <h1 className="text-3xl font-bold text-primary">問題管理</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-primary">問題管理</h1>
           </div>
           <div className="flex gap-2">
             {isSpecialMaster && (
@@ -646,7 +646,7 @@ export function QuestionManagement() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDelete(test.id)}
-                                  className="text-red-600 hover:bg-red-50"
+                                  className="text-muted-foreground hover:text-critical hover:bg-critical/10 hover:border-critical/40"
                                 >
                                   <Trash2 className="mr-1 h-4 w-4" />
                                   削除
@@ -733,7 +733,7 @@ export function QuestionManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                              className="h-7 text-xs text-muted-foreground hover:text-critical hover:bg-critical/10 hover:border-critical/40"
                               onClick={() => handleDeleteTestSession(sessionId, sessionLabel)}
                             >
                               <Trash2 className="w-3 h-3 mr-1" />
@@ -783,7 +783,7 @@ export function QuestionManagement() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDelete(test.id)}
-                                  className="text-red-600 hover:bg-red-50"
+                                  className="text-muted-foreground hover:text-critical hover:bg-critical/10 hover:border-critical/40"
                                 >
                                   <Trash2 className="mr-1 h-4 w-4" />
                                   削除

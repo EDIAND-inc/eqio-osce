@@ -5,8 +5,8 @@
 @theme inline {
   --animate-in: enter;
   --animate-out: exit;
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-biz-ud), 'BIZ UDPGothic', 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-sm: 0.225rem;
   --radius-md: 0.425rem;
   --radius-lg: 0.625rem;
@@ -22,13 +22,13 @@
   --color-secondary: #e0f2fe;
   --color-secondary-foreground: #0369a1;
   --color-muted: #e0f2fe;
-  --color-muted-foreground: #64748b;
+  --color-muted-foreground: #5b6b80;
   --color-accent: #e0f2fe;
   --color-accent-foreground: #0369a1;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ef4444;
-  --color-border: #bae6fd;
-  --color-input: #bae6fd;
+  --color-border: #d6e6f1;
+  --color-input: #a9d4ef;
   --color-ring: #38bdf8;
   --color-chart-1: #0284c7;
   --color-chart-2: #0d9488;
@@ -44,6 +44,9 @@
   --color-warning-foreground: #ffffff;
   --color-critical: #e11d48;
   --color-critical-foreground: #ffffff;
+  /* 2026-11-06: 患者役を表す色 (教員=primary の青と対)。bg-patient / text-patient */
+  --color-patient: #db2777;
+  --color-patient-foreground: #ffffff;
   --color-sidebar: #e0f2fe;
   --color-sidebar-foreground: #0c4a6e;
   --color-sidebar-primary: #0284c7;
@@ -65,6 +68,15 @@
   /* 見出しは折り返しを均等に (2 行以上でも収まりが良くなる) */
   h1, h2, h3 {
     text-wrap: balance;
+  }
+  /* 2026-11-06 見やすさ改善: UD 書体は字面が大きいので行間をやや広めに */
+  body {
+    line-height: 1.6;
+  }
+  /* 2026-11-06 見やすさ改善(提案 2/5): 表の見出しは濃い文字・太字に統一 (個別の text-* 指定があればそちらが優先) */
+  thead th {
+    font-weight: 700;
+    color: color-mix(in srgb, var(--color-foreground) 85%, transparent);
   }
 }
 

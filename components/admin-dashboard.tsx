@@ -113,11 +113,11 @@ function LoginDot({ at }: { at?: string | null }) {
 // 部屋詳細モーダル用: ●本日 HH:MM / ○未ログイン のバッジ。
 function LoginStatusBadge({ at }: { at?: string | null }) {
   return isLoggedInToday(at) ? (
-    <span className="text-[11px] rounded-full bg-success/15 text-success px-1.5 py-0.5 font-medium whitespace-nowrap">
+    <span className="text-xs rounded-full bg-success/15 text-success px-1.5 py-0.5 font-medium whitespace-nowrap">
       ● 本日 {formatLoginTime(at)}
     </span>
   ) : (
-    <span className="text-[11px] rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 whitespace-nowrap">
+    <span className="text-xs rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 whitespace-nowrap">
       ○ 未ログイン
     </span>
   )
@@ -1180,22 +1180,19 @@ const AdminDashboard = () => {
             { label: "要注意", value: totalAlertCount, Icon: XCircle, tone: "critical" },
             { label: "合格者", value: totalPassCount, Icon: Trophy, tone: "warning" },
           ].map(({ label, value, Icon, tone }) => {
-            const toneCls =
-              tone === "success" ? "text-success before:bg-success"
-                : tone === "critical" ? "text-critical before:bg-critical"
-                : tone === "warning" ? "text-warning before:bg-warning"
-                : "text-primary before:bg-primary"
+            // 2026-11-06 見やすさ改善(提案 3/4): 枠と数字は通常色にそろえ、色は「要注意 > 0」にだけ使う。
+            const hot = tone === "critical" && value > 0
             return (
               <Card
                 key={label}
-                className={`relative overflow-hidden before:absolute before:inset-y-0 before:left-0 before:w-1 ${toneCls}`}
+                className={`relative overflow-hidden gap-0 py-0 shadow-none ${hot ? "border-critical/50 bg-critical/[0.05] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-critical" : ""}`}
               >
-                <CardContent className="p-3 pl-3.5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-                    <Icon className={`w-3.5 h-3.5 ${toneCls.split(" ")[0]} opacity-70`} />
+                <CardContent className={`p-3 ${hot ? "pl-4" : ""}`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`text-[13px] font-bold ${hot ? "text-critical" : "text-muted-foreground"}`}>{label}</span>
+                    <Icon className={`w-4 h-4 ${hot ? "text-critical" : "text-muted-foreground/70"}`} />
                   </div>
-                  <div className={`text-[1.7rem] font-extrabold leading-none tnum ${toneCls.split(" ")[0]}`}>{value}</div>
+                  <div className={`text-[1.8rem] font-bold leading-none tnum ${hot ? "text-critical" : value === 0 ? "text-muted-foreground/60" : "text-foreground"}`}>{value}</div>
                 </CardContent>
               </Card>
             )
@@ -1220,136 +1217,129 @@ const AdminDashboard = () => {
                   const ackedCount = alertAcks[room.roomNumber] ?? 0
                   const hasAnyAlert = room.alertCount > 0
                   const unhandledAlert = room.alertCount > ackedCount
+                  // 2026-11-06 見やすさ改善(提案 4): 数字の羅列 → 進捗バー + アラートバッジ。
+                  //   完了率の分母は出席者数(欠席は採点不要)。0 は薄い灰色で目立たせない。
+                  const denom = room.presentCount
+                  const bar = (done: number) => (denom > 0 ? Math.min(100, Math.round((done / denom) * 100)) : 0)
+                  const slotMark = (len: number, i: number) => (len > 1 ? ["①", "②", "③", "④", "⑤"][i] || `(${i + 1})` : "")
                   return (
-                  <Card key={room.roomNumber} className={`transition-all cursor-pointer hover:shadow-md ${unhandledAlert ? "bg-critical/[0.04] border-critical/40 ring-1 ring-critical/20 hover:bg-critical/[0.07]" : "bg-card hover:bg-accent/30 hover:border-primary/40"}`} onClick={() => setSelectedRoom(room.roomNumber)}>
-                    <CardContent className="p-3">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between border-b pb-1.5 gap-1">
-                          <div className="min-w-0">
-                            <div className="font-bold text-sm text-primary">部屋 {room.roomNumber}</div>
-                            {room.roomName && <div className="text-[11px] text-muted-foreground truncate">{room.roomName}</div>}
-                          </div>
-                          {unhandledAlert ? (
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-critical/10 px-1.5 py-0.5 text-[10px] font-bold text-critical">
-                                <span className="h-1 w-1 rounded-full bg-current" />要注意
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setPendingAckRoom({
-                                    roomNumber: room.roomNumber,
-                                    roomName: room.roomName,
-                                    alertCount: room.alertCount,
-                                  })
-                                }}
-                                className="relative rounded-full border border-critical/40 bg-background px-1.5 py-0.5 text-[10px] font-bold text-critical hover:bg-critical/10 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
-                                title="このカードの赤(要注意)表示を解除します（対応済にする）"
-                              >
-                                対応済
-                              </button>
-                            </div>
-                          ) : hasAnyAlert ? (
+                  <Card key={room.roomNumber} className={`relative overflow-hidden gap-0 py-0 transition-all cursor-pointer hover:shadow-md ${unhandledAlert ? "bg-critical/[0.04] border-critical/40 hover:bg-critical/[0.07] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-critical" : "bg-card shadow-none hover:border-primary/40"}`} onClick={() => setSelectedRoom(room.roomNumber)}>
+                    <CardContent className={`p-3.5 ${unhandledAlert ? "pl-5" : ""}`}>
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div className="min-w-0">
+                          <div className="font-bold text-[17px] leading-snug text-foreground">部屋 {room.roomNumber}</div>
+                          {room.roomName && <div className="text-[13px] text-muted-foreground truncate">{room.roomName}</div>}
+                        </div>
+                        {unhandledAlert ? (
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="inline-flex items-center rounded-full bg-critical px-2 py-0.5 text-xs font-bold text-critical-foreground tnum">
+                              アラート {room.alertCount}
+                            </span>
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                void handleUnacknowledgeRoom(room.roomNumber)
+                                setPendingAckRoom({
+                                  roomNumber: room.roomNumber,
+                                  roomName: room.roomName,
+                                  alertCount: room.alertCount,
+                                })
                               }}
-                              className="relative inline-flex items-center gap-1 rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-bold text-success shrink-0 hover:bg-success/20 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
-                              title="対応済を取り消して、再び要注意表示に戻します"
+                              className="relative rounded-full border border-critical/40 bg-background px-2 py-0.5 text-xs font-bold text-critical hover:bg-critical/10 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2 before:content-['']"
+                              title="このカードの赤(アラート)表示を解除します（対応済にする）"
                             >
-                              ✓対応済
+                              対応済にする
                             </button>
-                          ) : null}
+                          </div>
+                        ) : hasAnyAlert ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void handleUnacknowledgeRoom(room.roomNumber)
+                            }}
+                            className="relative inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-bold text-success shrink-0 hover:bg-success/20 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
+                            title="対応済を取り消して、再びアラート表示に戻します"
+                          >
+                            ✓対応済
+                          </button>
+                        ) : null}
+                      </div>
+
+                      {/* 担当者 (2026-07-03 副田さん要望: 全員名 + ログイン状況ドット) */}
+                      <div className="mt-2 space-y-0.5 text-[13px]">
+                        {room.teacherNames.length === 0 ? (
+                          <div className="text-muted-foreground">教員: 未割当</div>
+                        ) : (
+                          room.teacherNames.map((name, i) => (
+                            <div key={`t-${i}`} className="flex items-center gap-1 min-w-0">
+                              <span className="text-muted-foreground shrink-0">教員{slotMark(room.teacherNames.length, i)}</span>
+                              <LoginDot at={room.teacherSlots[i]?.lastLoginAt} />
+                              <span className="truncate">{name}</span>
+                            </div>
+                          ))
+                        )}
+                        {room.patientNames.length === 0 ? (
+                          <div className="text-muted-foreground">患者役: 未割当</div>
+                        ) : (
+                          room.patientNames.map((name, i) => (
+                            <div key={`p-${i}`} className="flex items-center gap-1 min-w-0">
+                              <span className="text-muted-foreground shrink-0">患者役{slotMark(room.patientNames.length, i)}</span>
+                              <LoginDot at={room.patientSlots[i]?.lastLoginAt} />
+                              <span className="truncate">{name}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="mt-2.5 border-t pt-2.5 space-y-2 tnum">
+                        <div className="flex items-baseline justify-between text-[13px]">
+                          <span className="text-muted-foreground">出席</span>
+                          <span className={`text-base font-bold ${room.presentCount === 0 ? "text-muted-foreground/60" : "text-foreground"}`}>
+                            {room.presentCount}
+                            {room.absentCount > 0 && (
+                              <span className="ml-1 text-xs font-normal text-muted-foreground">(欠席 {room.absentCount})</span>
+                            )}
+                          </span>
                         </div>
-                        <div className="text-xs space-y-0.5">
-                          {/* 2026-07-03 副田さん要望: 教員①②/患者役 の全員名を可変表示 */}
-                          {room.teacherNames.length === 0 ? (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">教員:</span>
-                              <span className="font-medium truncate ml-1 text-muted-foreground">未割当</span>
-                            </div>
-                          ) : (
-                            room.teacherNames.map((name, i) => (
-                              <div key={`t-${i}`} className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  教員
-                                  {room.teacherNames.length > 1
-                                    ? ["①", "②", "③", "④", "⑤"][i] || `(${i + 1})`
-                                    : ""}
-                                  :
-                                </span>
-                                <span className="font-medium truncate ml-1 inline-flex items-center gap-1 min-w-0">
-                                  <LoginDot at={room.teacherSlots[i]?.lastLoginAt} />
-                                  <span className="truncate">{name}</span>
-                                </span>
-                              </div>
-                            ))
-                          )}
-                          {room.patientNames.length === 0 ? (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">患者:</span>
-                              <span className="font-medium truncate ml-1 text-muted-foreground">未割当</span>
-                            </div>
-                          ) : (
-                            room.patientNames.map((name, i) => (
-                              <div key={`p-${i}`} className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  患者
-                                  {room.patientNames.length > 1
-                                    ? ["①", "②", "③"][i] || `(${i + 1})`
-                                    : ""}
-                                  :
-                                </span>
-                                <span className="font-medium truncate ml-1 inline-flex items-center gap-1 min-w-0">
-                                  <LoginDot at={room.patientSlots[i]?.lastLoginAt} />
-                                  <span className="truncate">{name}</span>
-                                </span>
-                              </div>
-                            ))
-                          )}
-                          <div className="border-t pt-1.5 mt-1 space-y-0.5 tnum">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">出席:</span>
-                              <span className="font-semibold text-success">{room.presentCount}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">完了:</span>
-                              <span className="font-semibold">
-                                <span className="text-primary">教 {room.teacherStats.completedCount}</span>
-                                <span className="mx-0.5 text-muted-foreground">/</span>
-                                <span className="text-primary/70">患 {room.patientStats.completedCount}</span>
+                        {[
+                          { label: "教員の評価", done: room.teacherStats.completedCount, alerts: room.teacherStats.alertCount, color: "bg-primary" },
+                          { label: "患者役の評価", done: room.patientStats.completedCount, alerts: room.patientStats.alertCount, color: "bg-patient" },
+                        ].map(({ label, done, alerts, color }) => (
+                          <div key={label}>
+                            <div className="flex items-baseline justify-between text-[13px]">
+                              <span className="text-muted-foreground">
+                                {label}
+                                {alerts > 0 && <span className="ml-1 font-bold text-critical">⚠{alerts}</span>}
+                              </span>
+                              <span className="font-bold text-foreground">
+                                {done}
+                                <span className="font-normal text-muted-foreground"> / {denom}</span>
                               </span>
                             </div>
-                            {(room.teacherStats.alertCount > 0 || room.patientStats.alertCount > 0) && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">注意:</span>
-                                <span className="font-semibold text-critical">
-                                  教 {room.teacherStats.alertCount}
-                                  <span className="mx-0.5 opacity-60">/</span>
-                                  患 {room.patientStats.alertCount}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">合格:</span>
-                              <span className="font-semibold text-warning">{room.passCount}</span>
+                            <div className="mt-1 h-2 rounded-full bg-muted overflow-hidden" aria-hidden>
+                              <div
+                                className={`h-full rounded-full ${denom > 0 && done >= denom ? "bg-success" : color}`}
+                                style={{ width: `${bar(done)}%` }}
+                              />
                             </div>
-                            {(room.teacherStats.averageScore > 0 || room.patientStats.averageScore > 0) && (
-                              <div className="pt-1 border-t mt-1 space-y-0.5">
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">平均(教):</span>
-                                  <span className="font-bold text-primary">{room.teacherStats.averageScore}点</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">平均(患):</span>
-                                  <span className="font-bold text-primary/70">{room.patientStats.averageScore}点</span>
-                                </div>
-                              </div>
-                            )}
                           </div>
+                        ))}
+                        <div className="flex items-baseline justify-between gap-2 border-t pt-2 text-[13px]">
+                          <span className="text-muted-foreground" title="平均点(教員 / 患者役)">
+                            平均{" "}
+                            <span className="font-bold text-foreground">
+                              {room.teacherStats.averageScore > 0 ? `${room.teacherStats.averageScore}点` : "-"}
+                            </span>
+                            <span className="mx-0.5">/</span>
+                            <span className="font-bold text-foreground">
+                              {room.patientStats.averageScore > 0 ? `${room.patientStats.averageScore}点` : "-"}
+                            </span>
+                          </span>
+                          <span className="text-muted-foreground shrink-0">
+                            合格{" "}
+                            <span className={`font-bold ${room.passCount > 0 ? "text-success" : "text-muted-foreground/60"}`}>{room.passCount}</span>
+                          </span>
                         </div>
                       </div>
                     </CardContent>
@@ -1550,7 +1540,7 @@ const AdminDashboard = () => {
                               className={`text-center py-2 whitespace-nowrap ${slot.roleType === "teacher" ? "text-blue-700" : "text-pink-700"}`}
                             >
                               完了
-                              <div className="text-[10px] font-normal">{slot.label}</div>
+                              <div className="text-xs font-normal">{slot.label}</div>
                             </th>
                           ))}
                           <th className="text-center py-2">合否</th>
@@ -1685,7 +1675,7 @@ const AdminDashboard = () => {
                             <span className="text-xs text-red-700 font-medium truncate">
                               {it.categoryTitle || it.sheetTitle || ""}
                             </span>
-                            <span className="text-[10px] rounded-full bg-red-600 text-white px-1.5 py-0.5 font-bold shrink-0">
+                            <span className="text-xs rounded-full bg-red-600 text-white px-1.5 py-0.5 font-bold shrink-0">
                               アラート該当
                             </span>
                           </div>
@@ -1709,7 +1699,7 @@ const AdminDashboard = () => {
             <AlertDialogDescription>
               部屋 {pendingAckRoom?.roomNumber}
               {pendingAckRoom?.roomName ? `（${pendingAckRoom.roomName}）` : ""}
-              の赤い「要注意」表示を解除します。新たなアラートが発生した場合は、再び要注意表示に戻ります。
+              の赤いアラート表示を解除します。新たなアラートが発生した場合は、再びアラート表示に戻ります。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -75,13 +75,13 @@ export function ExamQuestionsRenderer({
         <div key={sheet.sheetTitle} className="space-y-3">
           {/* 2026-07-12 デザイン Phase 2-1: シート見出しに左アクセント + 質感 */}
           <div className="flex items-center gap-2.5 rounded-lg border-l-4 border-primary bg-secondary/60 px-4 py-2.5">
-            <span className="text-base font-bold text-primary">{sheet.sheetTitle}</span>
+            <span className="text-lg font-bold text-primary">{sheet.sheetTitle}</span>
           </div>
 
           {sheet.categories.map((category) => (
             <div key={category.categoryNumber} className="space-y-1.5">
               <div className="px-2 pt-1">
-                <p className="text-sm font-bold text-foreground/80 tracking-wide">{category.categoryTitle}</p>
+                <p className="text-[15px] font-bold text-foreground/85">{category.categoryTitle}</p>
               </div>
 
               <div className="space-y-0.5">
@@ -119,14 +119,14 @@ export function ExamQuestionsRenderer({
                       }`}
                     >
                     <div className={`flex items-start gap-3 sm:gap-4 px-3 py-2.5 ${isAlertTarget ? "pl-2.5" : ""}`}>
-                      <div className="flex-shrink-0 w-7 pt-2 text-sm font-semibold text-muted-foreground tnum text-right">
+                      <div className="flex-shrink-0 w-8 pt-2.5 text-base font-bold text-muted-foreground tnum text-right">
                         {question.number}
                       </div>
 
-                      <div className="flex-1 min-w-0 pt-1.5 text-sm leading-relaxed">
+                      <div className="flex-1 min-w-0 pt-2 text-[17px] leading-relaxed">
                         {question.text}
                         {isAlertTarget && (
-                          <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-critical/30 bg-critical/10 px-2 py-0.5 text-[11px] font-semibold text-critical align-middle">
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-critical/30 bg-critical/10 px-2 py-0.5 text-xs font-semibold text-critical align-middle">
                             アラート {question.alertOptions?.join(",")}
                           </span>
                         )}
@@ -151,7 +151,7 @@ export function ExamQuestionsRenderer({
                               onClick={() => onAnswer(compositeKey, isOn ? null : option)}
                               disabled={inputDisabled || !attendancePresent}
                               title={isOn ? "もう一度押すと解除" : undefined}
-                              className={`inline-flex h-11 min-w-[2.75rem] items-center justify-center rounded-xl border text-base font-bold transition-all
+                              className={`inline-flex h-[52px] min-w-[3.25rem] items-center justify-center rounded-xl border-2 text-lg font-bold transition-all
                                 ${isText ? "px-3.5 whitespace-nowrap" : "tabular-nums"}
                                 disabled:cursor-not-allowed disabled:opacity-40
                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1
@@ -171,9 +171,9 @@ export function ExamQuestionsRenderer({
                     {question.commentEnabled && (
                       <div className="px-3 pb-2.5 pl-10 sm:pl-11">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[11px] font-semibold text-muted-foreground">コメント</span>
+                          <span className="text-[13px] font-bold text-muted-foreground">コメント</span>
                           {commentRequired && (
-                            <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${
+                            <span className={`text-xs font-bold rounded px-1.5 py-0.5 ${
                               commentMissing ? "bg-critical/15 text-critical" : "bg-muted text-muted-foreground"
                             }`}>
                               {commentMissing ? "必須・未入力" : "必須"}
@@ -187,12 +187,12 @@ export function ExamQuestionsRenderer({
                           rows={2}
                           maxLength={commentMaxLength}
                           placeholder="コメントを入力（任意）"
-                          className={`w-full resize-none rounded-lg border bg-card px-3 py-2 text-sm leading-relaxed
+                          className={`w-full resize-none rounded-lg border bg-card px-3 py-2 text-[15px] leading-relaxed
                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
                             disabled:cursor-not-allowed disabled:opacity-50
                             ${commentMissing ? "border-critical/70" : "border-input"}`}
                         />
-                        <div className="mt-0.5 text-right text-[10px] text-muted-foreground tnum">
+                        <div className="mt-0.5 text-right text-xs text-muted-foreground tnum">
                           {commentText.length} / {commentMaxLength}
                         </div>
                       </div>

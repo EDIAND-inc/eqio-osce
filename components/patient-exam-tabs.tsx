@@ -500,7 +500,7 @@ export default function PatientExamTabs({
               >
                 <div className="font-medium text-sm mb-1 text-center truncate">{student.name}</div>
                 {student.attendanceNumber ? (
-                  <div className="mb-1 text-center text-[11px] text-muted-foreground">出席番号 {student.attendanceNumber}</div>
+                  <div className="mb-1 text-center text-xs text-muted-foreground">出席番号 {student.attendanceNumber}</div>
                 ) : null}
 
                 <div className="flex gap-1 mb-2">
@@ -620,7 +620,7 @@ export default function PatientExamTabs({
                     placeholder="全体を通してのコメントを入力（任意・教員内部の記録）"
                     className="mt-1 w-full resize-none rounded-lg border border-input bg-card px-3 py-2 text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   />
-                  <div className="mt-0.5 text-right text-[10px] text-muted-foreground tnum">
+                  <div className="mt-0.5 text-right text-xs text-muted-foreground tnum">
                     {((studentComments[activeStudent.id] || {})[OVERALL_COMMENT_KEY] || "").length} / {MAX_COMMENT_LENGTH}
                   </div>
                 </div>
