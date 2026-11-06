@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Edit, Trash2, ArrowLeft, Calendar, Copy, Hourglass, Users } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, Copy, Hourglass, Users } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import Link from "next/link"
 import { loadTests, saveTests, deleteTest, type Test } from "@/lib/data-storage"
 import { buildTestLabelMap } from "@/lib/exam/test-labels"
@@ -443,17 +445,13 @@ export function QuestionManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto ">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                ダッシュボードに戻る
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-[#00417A]">問題管理</h1>
+    // 2026-11-06 デザイン見直し: 一覧画面(1,280px)
+    <PageContainer width="list">
+      <div>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div className="space-y-1">
+            <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
+            <h1 className="text-3xl font-bold text-primary">問題管理</h1>
           </div>
           <div className="flex gap-2">
             {isSpecialMaster && (
@@ -1011,6 +1009,6 @@ export function QuestionManagement() {
           })()}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   )
 }

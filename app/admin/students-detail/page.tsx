@@ -39,6 +39,8 @@ import { computePassResult } from "@/lib/passing"
 import { useSession } from "@/lib/auth/use-session"
 import { StatusPill, type StatusKind } from "@/components/ui/status-pill"
 import { EmptyState } from "@/components/ui/empty-state"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 
 // ADR-005 hotfix: テスト終了ボタンを表示できる accountType / role の集合
 // (api-guard.ts ADMIN_ROLES と意味的に対応)
@@ -610,12 +612,14 @@ export default function StudentsDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+    // 2026-11-06 デザイン見直し: 設問ごとの列が並ぶ情報量の多い表なので wide(1,600px)
+    <PageContainer width="wide">
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">受験者一覧</h1>
+              <h1 className="text-3xl font-bold text-primary">受験者一覧</h1>
               <Badge variant={getStatusVariant(sessionStatus)} className="text-sm px-3 py-1">
                 {getStatusLabel(sessionStatus)}
               </Badge>
@@ -663,9 +667,6 @@ export default function StudentsDetailPage() {
               </AlertDialog>
             )}
 
-            <Button onClick={() => (window.location.href = "/admin/dashboard")} variant="outline">
-              ダッシュボードに戻る
-            </Button>
           </div>
         </div>
 
@@ -852,7 +853,6 @@ export default function StudentsDetailPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   )
 }
-

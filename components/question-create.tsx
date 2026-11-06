@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Plus, Trash2, FileDown, MoreHorizontal } from "lucide-react"
+import { Plus, Trash2, FileDown, MoreHorizontal } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import Link from "next/link"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { useRouter } from "next/navigation"
 import { saveTests, type Test, type Sheet, type Question } from "@/lib/data-storage"
 import { useSession } from "@/lib/auth/use-session"
@@ -837,17 +838,13 @@ export function QuestionCreate() {
   )
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto ">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/question-management">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                問題管理に戻る
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-[#00417A]">問題登録</h1>
+    <PageContainer width="list">
+      <div>
+        {/* 2026-11-06 デザイン見直し: 編集画面(1,280px)。戻るリンクは見出しの上に統一 */}
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div className="space-y-1">
+            <BackLink href="/admin/question-management" label="問題管理に戻る" />
+            <h1 className="text-3xl font-bold text-primary">問題登録</h1>
           </div>
           <Button onClick={handleSave} className="bg-[#00417A] hover:bg-[#00417A]/90">
             保存
@@ -1443,7 +1440,7 @@ export function QuestionCreate() {
         tests={tests}
         onSave={updateQuestionScoreMap}
       />
-    </div>
+    </PageContainer>
   )
 }
 

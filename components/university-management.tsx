@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
+import { Upload, Plus, Pencil, Trash2 } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { EmptyState } from "@/components/ui/empty-state"
-import { useRouter } from "next/navigation"
 import { readCsvFile } from "@/lib/csv"
 
 interface University {
@@ -34,7 +35,6 @@ export function UniversityManagement() {
     department_name: "",
   })
   const { toast } = useToast()
-  const router = useRouter()
 
   useEffect(() => {
     loadUniversities()
@@ -189,8 +189,10 @@ export function UniversityManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-6">
+    // 2026-11-06 デザイン見直し: 列の少ない表なので menu(1,024px)
+    <PageContainer width="menu">
+      <div className="space-y-4">
+        <BackLink href="/admin/master-management" label="マスター管理に戻る" />
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -199,10 +201,6 @@ export function UniversityManagement() {
                 <CardDescription>大学コード、大学名、学部名を管理します</CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => router.push("/admin/dashboard")}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  ダッシュボードに戻る
-                </Button>
                 <Button
                   onClick={() => {
                     setEditingUniversity(null)
@@ -334,6 +332,6 @@ export function UniversityManagement() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </PageContainer>
   )
 }

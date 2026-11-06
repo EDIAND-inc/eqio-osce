@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Home, Download, Trash2, Search, Edit, AlertTriangle } from "lucide-react"
+import { Download, Trash2, Search, Edit, AlertTriangle } from "lucide-react"
 import { loadStudents, saveStudents, loadRooms, loadSubjects, deleteStudent, type Student, type Subject } from "@/lib/data-storage"
 import { updateStudent } from "@/lib/api/students"
 import { useSession } from "@/lib/auth/use-session"
@@ -231,10 +232,12 @@ export default function StudentsListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-6">
+    // 2026-11-06 デザイン見直し: 一覧画面(1,280px)
+    <PageContainer width="list">
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
+          <div className="space-y-1">
+            <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
             <h1 className="text-3xl font-bold text-primary">学生一覧</h1>
             <p className="text-muted-foreground">登録済み学生: {students.length}名</p>
           </div>
@@ -247,12 +250,6 @@ export default function StudentsListPage() {
               <Trash2 className="w-4 h-4 mr-2" />
               全削除
             </Button>
-            <Link href="/admin/account-management">
-              <Button variant="outline">
-                <Home className="w-4 h-4 mr-2" />
-                戻る
-              </Button>
-            </Link>
           </div>
         </div>
 
@@ -463,6 +460,6 @@ export default function StudentsListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   )
 }

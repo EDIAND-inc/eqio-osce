@@ -4,7 +4,6 @@ import type React from "react"
 import { useSession } from "@/lib/auth/use-session"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +11,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Plus, Edit, Trash2, BookOpen } from "lucide-react"
+import { Plus, Edit, Trash2, BookOpen } from "lucide-react"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { EmptyState } from "@/components/ui/empty-state"
 import {
   Dialog,
@@ -41,7 +42,6 @@ interface University {
 }
 
 export function SubjectManagement() {
-  const router = useRouter()
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [universities, setUniversities] = useState<University[]>([])
   const [selectedUniversity, setSelectedUniversity] = useState<string>("all")
@@ -222,15 +222,9 @@ export function SubjectManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button onClick={() => router.push("/admin/master-management")} variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            マスター管理へ戻る
-          </Button>
-        </div>
-      </div>
+    // 2026-11-06 デザイン見直し: 列の少ない表なので menu(1,024px)
+    <PageContainer width="menu" className="space-y-4">
+      <BackLink href="/admin/master-management" label="マスター管理に戻る" />
 
       <Card>
         <CardHeader>
@@ -398,6 +392,6 @@ export function SubjectManagement() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

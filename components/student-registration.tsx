@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Home, UserPlus, Upload, Download, Trash2, ArrowLeft, Search, Users } from "lucide-react"
+import { UserPlus, Upload, Download, Trash2, Search, Users } from "lucide-react"
 import { saveStudents, loadStudents, loadRooms, loadSubjects, deleteStudent, type Student, type Room, type Subject } from "@/lib/data-storage"
 import { useSession } from "@/lib/auth/use-session"
 import { readCsvFile, csvDownloadBlob } from "@/lib/csv"
@@ -438,33 +439,23 @@ export function StudentRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
+    <PageContainer width="list">
       {(() => {  return null })()}
-      <div className="mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
+          <div className="space-y-1">
+            {/* 2026-11-06 デザイン見直し: 一覧と入力が同居するので list(1,280px)。戻るは見出しの上 */}
+            {accountType === "special_master" ? (
+              <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
+            ) : (
+              <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
+            )}
             <h1 className="text-3xl font-bold text-primary">学生登録</h1>
             <p className="text-muted-foreground">受験者情報を登録・管理</p>
             <p className="text-xs mt-1 px-2 py-1 rounded bg-green-50 border border-green-200 text-green-800 inline-block">
               ✅ 「学生を追加」「CSV 取込」は即時保存されます(確定ボタン不要)。
             </p>
-          </div>
-          <div className="flex gap-2">
-            {accountType === "special_master" && (
-              <Link href="/admin/account-management">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  戻る
-                </Button>
-              </Link>
-            )}
-            <Link href="/admin/dashboard">
-              <Button variant="outline" size="sm">
-                <Home className="mr-2 h-4 w-4" />
-                ダッシュボード
-              </Button>
-            </Link>
           </div>
         </div>
 
@@ -972,6 +963,6 @@ export function StudentRegistration() {
         {/* 2026-05-20 熊木さん指摘: 「登録を確定」ボタンは押し忘れの原因だったため
             撤去。「学生を追加」「CSV 取込」時に即時保存される仕様に変更。 */}
       </div>
-    </div>
+    </PageContainer>
   )
 }

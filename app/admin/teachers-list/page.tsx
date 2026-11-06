@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { PageContainer } from "@/components/page-container"
+import { BackLink } from "@/components/back-link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Home, Download, Trash2, Search, Edit, AlertTriangle } from "lucide-react"
+import { Download, Trash2, Search, Edit, AlertTriangle } from "lucide-react"
 import { loadTeachers, loadRooms, deleteTeacher, loadSubjects, type Teacher,
   type TeacherRole, type Subject } from "@/lib/data-storage"
 import { updateTeacher } from "@/lib/api/teachers"
@@ -215,10 +217,12 @@ export default function TeachersListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 p-4 md:p-8">
-      <div className="mx-auto space-y-6">
+    // 2026-11-06 デザイン見直し: 一覧画面(1,280px)
+    <PageContainer width="list">
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
+          <div className="space-y-1">
+            <BackLink href="/admin/account-management" label="アカウント管理に戻る" />
             <h1 className="text-3xl font-bold text-primary">教員一覧</h1>
             <p className="text-muted-foreground">登録済み教員: {teachers.length}名</p>
           </div>
@@ -245,12 +249,6 @@ export default function TeachersListPage() {
                 </Button>
               </>
             )}
-            <Link href="/admin/dashboard">
-              <Button variant="outline">
-                <Home className="w-4 h-4 mr-2" />
-                戻る
-              </Button>
-            </Link>
           </div>
         </div>
 
@@ -520,6 +518,6 @@ export default function TeachersListPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </PageContainer>
   )
 }
