@@ -30,7 +30,7 @@ export default function MasterManagementPage() {
         <div className="space-y-1">
           <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
           <div>
-            <h1 className="text-[28px] leading-tight font-bold text-primary">マスター管理</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">マスター管理</h1>
             <p className="text-muted-foreground">大学、部屋、教科のマスターデータを管理します</p>
           </div>
         </div>

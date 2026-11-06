@@ -451,7 +451,7 @@ export function QuestionManagement() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
-            <h1 className="text-[28px] leading-tight font-bold text-primary">問題管理</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">問題管理</h1>
           </div>
           <div className="flex gap-2">
             {isSpecialMaster && (
@@ -614,8 +614,8 @@ export function QuestionManagement() {
                                   <h5 className="font-semibold text-[#00417A]">{test.title}</h5>
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                     (test as any).roleType === "patient"
-                                      ? "bg-pink-100 text-pink-800"
-                                      : "bg-blue-100 text-blue-800"
+                                      ? "bg-patient/10 text-patient"
+                                      : "bg-primary/10 text-primary"
                                   }`}>
                                     {testLabelMap[test.id] || ((test as any).roleType === "patient" ? "患者役側" : "教員側")}
                                   </span>
@@ -756,8 +756,8 @@ export function QuestionManagement() {
                                 <div className="flex items-center gap-2">
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                     (test as any).roleType === "patient"
-                                      ? "bg-pink-100 text-pink-800"
-                                      : "bg-blue-100 text-blue-800"
+                                      ? "bg-patient/10 text-patient"
+                                      : "bg-primary/10 text-primary"
                                   }`}>
                                     {testLabelMap[test.id] || ((test as any).roleType === "patient" ? "患者役側" : "教員側")}
                                   </span>
@@ -971,8 +971,8 @@ export function QuestionManagement() {
                         type="button"
                         className={`flex-1 py-2 px-3 rounded-md text-sm font-medium border-2 transition-colors ${
                           duplicateStep >= 3 && duplicateRoleType === "patient"
-                            ? "bg-pink-600 text-white border-pink-600"
-                            : "bg-card text-pink-700 border-pink-300 hover:bg-pink-50"
+                            ? "bg-patient text-patient-foreground border-patient"
+                            : "bg-card text-patient border-patient/40 hover:bg-patient/5"
                         }`}
                         onClick={() => {
                           setDuplicateRoleType("patient")

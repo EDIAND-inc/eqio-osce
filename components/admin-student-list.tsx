@@ -41,7 +41,7 @@ export function AdminStudentList() {
                 ダッシュボードに戻る
               </Button>
             </Link>
-            <h1 className="text-[28px] leading-tight font-bold text-primary">受験者一覧</h1>
+            <h1 className="text-[28px] leading-tight font-bold text-foreground">受験者一覧</h1>
             <p className="text-muted-foreground">受験者の詳細情報と試験結果</p>
           </div>
           <Button onClick={handleExportCSV}>

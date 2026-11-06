@@ -251,7 +251,7 @@ export function AdminSettings() {
       <div className="space-y-6">
         <div className="space-y-1">
           <BackLink href="/admin/dashboard" label="ダッシュボードに戻る" hideWhenAdminNav />
-          <h1 className="text-[28px] leading-tight font-bold text-primary">システム設定</h1>
+          <h1 className="text-[28px] leading-tight font-bold text-foreground">システム設定</h1>
           <p className="text-muted-foreground">試験システムの設定を管理</p>
         </div>
 

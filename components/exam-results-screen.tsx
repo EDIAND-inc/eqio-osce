@@ -242,7 +242,7 @@ export function ExamResultsScreen() {
             <p className="text-muted-foreground">
               部屋{roomNumber}の評価結果
               <span className={`ml-2 inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                evaluatorType === "patient" ? "bg-pink-100 text-pink-800" : "bg-blue-100 text-blue-800"
+                evaluatorType === "patient" ? "bg-patient/10 text-patient" : "bg-primary/10 text-primary"
               }`}>
                 {/* 2026-07-11 副田さん要望: 教員①/教員②/患者役 のどの視点かを明示 */}
                 {slotLabel || (evaluatorType === "patient" ? "患者役" : "教員")}の評価
