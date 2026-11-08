@@ -74,7 +74,7 @@ export function ExamQuestionsRenderer({
       {groupedQuestions.map((sheet) => (
         <div key={sheet.sheetTitle} className="space-y-3">
           {/* 2026-07-12 デザイン Phase 2-1: シート見出しに左アクセント + 質感 */}
-          <div className="flex items-center gap-2.5 rounded-lg border-l-4 border-primary bg-secondary/60 px-4 py-2.5">
+          <div className="flex items-center gap-2.5 rounded-lg border border-primary/30 bg-secondary/60 px-4 py-2.5">
             <span className="text-lg font-bold text-primary">{sheet.sheetTitle}</span>
           </div>
 

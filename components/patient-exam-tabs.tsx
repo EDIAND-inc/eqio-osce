@@ -492,10 +492,10 @@ export default function PatientExamTabs({
               <div
                 key={student.id}
                 onClick={() => switchToStudent(index)}
-                className={`flex-shrink-0 w-44 p-2 rounded-lg border-2 cursor-pointer transition-colors ${
+                className={`flex-shrink-0 w-44 p-2 rounded-lg border cursor-pointer transition-colors ${
                   activeStudentIndex === index
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 hover:border-primary/50"
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-card hover:border-primary/60"
                 }`}
               >
                 <div className="font-medium text-sm mb-1 text-center truncate">{student.name}</div>

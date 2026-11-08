@@ -966,7 +966,7 @@ export function QuestionCreate() {
               </div>
 
               {showNewTestForm && (
-                <Card className="mt-2 border-2 border-[#00417A]/20 bg-secondary/30">
+                <Card className="mt-2 bg-secondary/30">
                   <CardContent className="p-3 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -1032,7 +1032,7 @@ export function QuestionCreate() {
 
           <TabsContent value="manual" className="space-y-4">
             {tests.map((test, testIndex) => (
-              <Card key={test.id} className="border-2 border-[#00417A]/20">
+              <Card key={test.id}>
                 <CardHeader className="bg-[#00417A]/5">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

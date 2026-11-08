@@ -100,16 +100,6 @@ function formatLoginTime(at?: string | null): string {
   if (Number.isNaN(d.getTime())) return ""
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
 }
-// 部屋カード用: 名前の横に出す小さなログインドット(緑=本日ログイン済 / 灰=未)。
-function LoginDot({ at }: { at?: string | null }) {
-  const today = isLoggedInToday(at)
-  return (
-    <span
-      className={`h-1.5 w-1.5 rounded-full shrink-0 ${today ? "bg-success" : "bg-muted-foreground/30"}`}
-      title={today ? `本日ログイン済 ${formatLoginTime(at)}` : "本日 未ログイン"}
-    />
-  )
-}
 // 部屋詳細モーダル用: ●本日 HH:MM / ○未ログイン のバッジ。
 function LoginStatusBadge({ at }: { at?: string | null }) {
   return isLoggedInToday(at) ? (
@@ -1185,9 +1175,9 @@ const AdminDashboard = () => {
             return (
               <Card
                 key={label}
-                className={`relative overflow-hidden gap-0 py-0 shadow-none ${hot ? "border-critical/50 bg-critical/[0.05] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-critical" : ""}`}
+                className={`gap-0 py-0 ${hot ? "border-critical bg-critical/[0.05]" : ""}`}
               >
-                <CardContent className={`p-3 ${hot ? "pl-4" : ""}`}>
+                <CardContent className="p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`text-[13px] font-bold ${hot ? "text-critical" : "text-muted-foreground"}`}>{label}</span>
                     <Icon className={`w-4 h-4 ${hot ? "text-critical" : "text-muted-foreground/70"}`} />
@@ -1211,7 +1201,7 @@ const AdminDashboard = () => {
                 description="試験セッションを選択するか、部屋の割当を登録してください。"
               />
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-3">
                 {filteredRooms.map((room) => {
                   // 2026-11-05 対応済(DB保存)を加味。赤表示=未対応アラートがある時のみ。
                   const ackedCount = alertAcks[room.roomNumber] ?? 0
@@ -1223,8 +1213,8 @@ const AdminDashboard = () => {
                   const bar = (done: number) => (denom > 0 ? Math.min(100, Math.round((done / denom) * 100)) : 0)
                   const slotMark = (len: number, i: number) => (len > 1 ? ["①", "②", "③", "④", "⑤"][i] || `(${i + 1})` : "")
                   return (
-                  <Card key={room.roomNumber} className={`relative overflow-hidden gap-0 py-0 transition-all cursor-pointer hover:shadow-md ${unhandledAlert ? "bg-critical/[0.04] border-critical/40 hover:bg-critical/[0.07] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-critical" : "bg-card shadow-none hover:border-primary/40"}`} onClick={() => setSelectedRoom(room.roomNumber)}>
-                    <CardContent className={`p-3.5 ${unhandledAlert ? "pl-5" : ""}`}>
+                  <Card key={room.roomNumber} className={`gap-0 py-0 cursor-pointer transition-colors ${unhandledAlert ? "border-critical bg-critical/[0.04] hover:bg-critical/[0.07]" : "hover:border-primary"}`} onClick={() => setSelectedRoom(room.roomNumber)}>
+                    <CardContent className="p-3.5">
                       <div className="flex items-start justify-between gap-1.5">
                         <div className="min-w-0">
                           <div className="font-bold text-[17px] leading-snug text-foreground">部屋 {room.roomNumber}</div>
@@ -1266,31 +1256,68 @@ const AdminDashboard = () => {
                         ) : null}
                       </div>
 
-                      {/* 担当者 (2026-07-03 副田さん要望: 全員名 + ログイン状況ドット) */}
-                      <div className="mt-2 space-y-0.5 text-[13px]">
-                        {room.teacherNames.length === 0 ? (
-                          <div className="text-muted-foreground">教員: 未割当</div>
-                        ) : (
-                          room.teacherNames.map((name, i) => (
-                            <div key={`t-${i}`} className="flex items-center gap-1 min-w-0">
-                              <span className="text-muted-foreground shrink-0">教員{slotMark(room.teacherNames.length, i)}</span>
-                              <LoginDot at={room.teacherSlots[i]?.lastLoginAt} />
-                              <span className="truncate">{name}</span>
+                      {/* 担当者とログイン状況 (2026-07-03 / 2026-11-05 副田さん要望)
+                          2026-11-09 副田さん指摘: ドットが小さく判別できなかったため、
+                          1 人 1 行で「役割・氏名・本日のログイン時刻 or 未ログイン」をはっきり表示する。 */}
+                      {(() => {
+                        const people = [
+                          ...room.teacherNames.map((name, i) => ({
+                            key: `t-${i}`,
+                            role: `教員${slotMark(room.teacherNames.length, i)}`,
+                            roleCls: "text-primary",
+                            name,
+                            at: room.teacherSlots[i]?.lastLoginAt,
+                          })),
+                          ...room.patientNames.map((name, i) => ({
+                            key: `p-${i}`,
+                            role: `患者役${slotMark(room.patientNames.length, i)}`,
+                            roleCls: "text-patient",
+                            name,
+                            at: room.patientSlots[i]?.lastLoginAt,
+                          })),
+                        ]
+                        const loggedIn = people.filter((x) => isLoggedInToday(x.at)).length
+                        return (
+                          <div className="mt-3 rounded-md border bg-background">
+                            <div className="flex items-center justify-between border-b px-2.5 py-1.5 text-xs">
+                              <span className="font-bold text-muted-foreground">担当者</span>
+                              <span className={`font-bold tnum ${people.length > 0 && loggedIn === people.length ? "text-success" : "text-muted-foreground"}`}>
+                                ログイン {loggedIn} / {people.length}
+                              </span>
                             </div>
-                          ))
-                        )}
-                        {room.patientNames.length === 0 ? (
-                          <div className="text-muted-foreground">患者役: 未割当</div>
-                        ) : (
-                          room.patientNames.map((name, i) => (
-                            <div key={`p-${i}`} className="flex items-center gap-1 min-w-0">
-                              <span className="text-muted-foreground shrink-0">患者役{slotMark(room.patientNames.length, i)}</span>
-                              <LoginDot at={room.patientSlots[i]?.lastLoginAt} />
-                              <span className="truncate">{name}</span>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                            <ul className="divide-y">
+                              {room.teacherNames.length === 0 && (
+                                <li className="px-2.5 py-1.5 text-[13px] text-muted-foreground">教員 未割当</li>
+                              )}
+                              {room.patientNames.length === 0 && (
+                                <li className="px-2.5 py-1.5 text-[13px] text-muted-foreground">患者役 未割当</li>
+                              )}
+                              {people.map((x) => {
+                                const on = isLoggedInToday(x.at)
+                                return (
+                                  <li key={x.key} className="flex items-center gap-2 px-2.5 py-1.5 min-w-0">
+                                    <span className={`w-12 shrink-0 text-xs font-bold ${x.roleCls}`}>{x.role}</span>
+                                    <span className="flex-1 min-w-0 truncate text-[14px] font-bold text-foreground" title={x.name}>{x.name}</span>
+                                    {on ? (
+                                      <span
+                                        className="shrink-0 inline-flex items-center gap-1 rounded-full bg-success px-2 py-0.5 text-xs font-bold text-success-foreground tnum"
+                                        title={`本日 ${formatLoginTime(x.at)} にログイン`}
+                                      >
+                                        <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+                                        {formatLoginTime(x.at)}
+                                      </span>
+                                    ) : (
+                                      <span className="shrink-0 rounded-full border border-dashed border-muted-foreground/50 px-2 py-0.5 text-xs font-bold text-muted-foreground">
+                                        未ログイン
+                                      </span>
+                                    )}
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          </div>
+                        )
+                      })()}
 
                       <div className="mt-2.5 border-t pt-2.5 space-y-2 tnum">
                         <div className="flex items-baseline justify-between text-[13px]">
