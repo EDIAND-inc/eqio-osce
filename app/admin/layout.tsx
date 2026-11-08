@@ -11,8 +11,7 @@ import { AdminTopNav } from "@/components/admin-top-nav"
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell loginPath="/login">
-      <AdminTopNav />
+    <AppShell loginPath="/login" nav={<AdminTopNav />}>
       {children}
     </AppShell>
   )
