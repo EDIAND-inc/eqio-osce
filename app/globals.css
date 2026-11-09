@@ -47,6 +47,9 @@
   /* 2026-11-06: 患者役を表す色 (教員=primary の青と対)。bg-patient / text-patient
      2026-11-06 配色見直し: ピンクはアラートのローズ(critical)と見分けにくいため紫に変更 */
   --color-patient: #7048c8;
+  /* 2026-11-09 デザイン見直し: 画面上部の帯 (電子カルテ調の深い紺)。bg-chrome / text-chrome-foreground */
+  --color-chrome: #0f2d4a;
+  --color-chrome-foreground: #e8f0f8;
   --color-patient-foreground: #ffffff;
   --color-sidebar: #eef1f5;
   --color-sidebar-foreground: #1c2733;

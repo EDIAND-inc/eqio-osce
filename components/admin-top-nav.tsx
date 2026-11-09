@@ -114,10 +114,12 @@ export function AdminTopNav() {
   if (visibleItems.length === 0) return null
 
   return (
-    <nav className="border-b bg-background sticky top-0 z-10">
-      {/* 2026-11-06: ヘッダーと同じ最大幅(PAGE_WIDTH.wide = 1,600px)にそろえる */}
+    <nav aria-label="管理メニュー">
+      {/* 2026-11-06: ヘッダーと同じ最大幅(PAGE_WIDTH.wide = 1,600px)にそろえる
+          2026-11-09: 紺の帯の下段に置く「カルテのインデックスタブ」型。開いているタブだけ
+          ページと同じ地色になり、ページとつながって見える。 */}
       <div className="mx-auto max-w-[100rem] px-4 md:px-8">
-        <div className="flex items-center gap-1 overflow-x-auto">
+        <div className="flex items-end gap-1 overflow-x-auto">
           {visibleItems.map((item) => {
             const active = isActive(pathname, item.matchPrefixes)
             const Icon = item.icon
@@ -125,11 +127,12 @@ export function AdminTopNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={[
-                  "flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors",
+                  "flex items-center gap-2 rounded-t-lg px-4 h-11 text-[15px] whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60",
                   active
-                    ? "border-primary text-primary font-semibold"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/40",
+                    ? "bg-background text-foreground font-bold"
+                    : "text-chrome-foreground/75 hover:text-white hover:bg-white/10",
                 ].join(" ")}
               >
                 <Icon className="w-4 h-4" />
